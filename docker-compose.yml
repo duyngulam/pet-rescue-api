@@ -1,0 +1,42 @@
+# ==========================================================
+# LOCAL DEVELOPMENT — includes PostgreSQL container
+# Usage:  docker-compose up -d
+# ==========================================================
+
+services:
+  # ── PostgreSQL (local dev only) ────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: petrescue-postgres
+    environment:
+      POSTGRES_DB: petrescue
+      POSTGRES_USER: petrescue
+      POSTGRES_PASSWORD: petrescue
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petrescue"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Spring Boot App ────────────────────────────────
+  app:
+    build: .
+    container_name: petrescue-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: petrescue
+      DB_USERNAME: petrescue
+      DB_PASSWORD: petrescue
+
+volumes:
+  pgdata:

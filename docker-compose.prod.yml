@@ -1,0 +1,23 @@
+# ==========================================================
+# PRODUCTION — App only, connects to NeonDB (external Postgres)
+# No PostgreSQL container — database is managed by NeonDB.
+#
+# Usage:  docker-compose -f docker-compose.prod.yml up -d
+# Requires: .env file or environment variables with DB_* set to NeonDB URL
+# ==========================================================
+
+services:
+  app:
+    image: ${IMAGE_TAG:-petrescue-api:latest}
+    container_name: petrescue-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSL: ${DB_SSL:-true}
+    restart: unless-stopped

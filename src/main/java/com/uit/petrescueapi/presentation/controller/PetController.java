@@ -4,9 +4,9 @@ import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
 import com.uit.petrescueapi.application.dto.pet.UpdatePetRequestDto;
 import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
-import com.uit.petrescueapi.application.port.in.command.PetCommandPort;
-import com.uit.petrescueapi.application.port.in.query.PetQueryPort;
-import com.uit.petrescueapi.domain.entity.Pet;
+import com.uit.petrescueapi.application.port.command.PetCommandPort;
+import com.uit.petrescueapi.application.port.query.PetQueryPort;
+import com.uit.petrescueapi.domain.exception.ForbiddenException;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
 import com.uit.petrescueapi.presentation.dto.PageResponse;
@@ -16,17 +16,20 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 /**
  * REST controller exposing Pet CRUD endpoints.
- * Uses CQRS: separate command and query ports.
+ *
+ * <p>Uses CQRS: commands go through {@link PetCommandPort},
+ * queries go through {@link PetQueryPort} which returns DTOs directly
+ * (organization data included via JOIN — no extra flags needed).</p>
  */
 @RestController
 @RequestMapping("/api/v1/pets")
@@ -42,11 +45,32 @@ public class PetController {
     // ── Commands (write) ─────────────────────────
 
     @PostMapping
-    @Operation(summary = "Create a new pet")
-    public ResponseEntity<ApiResponse<PetResponseDto>> create(@Valid @RequestBody CreatePetRequestDto cmd) {
-        Pet pet = petCommandPort.create(cmd);
+    @Operation(summary = "Create a pet as a regular user (user-owned)")
+    public ResponseEntity<ApiResponse<PetResponseDto>> createAsUser(
+            @Valid @RequestBody CreatePetRequestDto cmd,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        log.debug("Creating pet for user {}", userId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(mapper.toDto(pet)));
+                .body(ApiResponse.created(mapper.toDto(petCommandPort.createForUser(cmd, userId))));
+    }
+
+    @PostMapping("/shelter")
+    @Operation(summary = "Create a pet as a shelter member (organization-owned)")
+    public ResponseEntity<ApiResponse<PetResponseDto>> createAsShelter(
+            @Valid @RequestBody CreatePetRequestDto cmd,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+
+        // shelterId must be provided in request body
+        UUID shelterId = cmd.getShelterId();
+        if (shelterId == null) {
+            throw new ForbiddenException("shelterId is required for shelter pet creation");
+        }
+
+        log.debug("Creating pet for shelter {} by user {}", shelterId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(mapper.toDto(petCommandPort.createForShelter(cmd, shelterId, userId))));
     }
 
     @PutMapping("/{id}")
@@ -73,42 +97,36 @@ public class PetController {
     // ── Queries (read) ──────────────────────────
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get pet by ID (full detail)")
+    @Operation(summary = "Get pet by ID (includes organization details)")
     public ResponseEntity<ApiResponse<PetResponseDto>> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(petQueryPort.findById(id))));
+        return ResponseEntity.ok(ApiResponse.ok(petQueryPort.findById(id)));
     }
 
     @GetMapping
-    @Operation(summary = "List all pets (paginated, summary view) nếu muốn cuộn cuộn thì bảo bạn đổi api")
+    @Operation(summary = "List all pets (paginated, includes organization)")
     public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<Pet> pets = petQueryPort.findAll(PageRequest.of(page, size));
-        PageResponse<PetSummaryResponseDto> pr = PageResponse.<PetSummaryResponseDto>builder()
-                .content(pets.getContent().stream().map(mapper::toSummaryDto).toList())
-                .page(pets.getNumber())
-                .size(pets.getSize())
-                .totalElements(pets.getTotalElements())
-                .totalPages(pets.getTotalPages())
-                .last(pets.isLast())
-                .build();
-        return ResponseEntity.ok(ApiResponse.ok(pr));
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(petQueryPort.findAll(PageRequest.of(page, size)))));
     }
 
     @GetMapping("/available")
-    @Operation(summary = "List available pets (paginated, summary view)")
+    @Operation(summary = "List available pets (paginated, includes organization)")
     public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getAvailable(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<Pet> pets = petQueryPort.findAvailable(PageRequest.of(page, size));
-        PageResponse<PetSummaryResponseDto> pr = PageResponse.<PetSummaryResponseDto>builder()
-                .content(pets.getContent().stream().map(mapper::toSummaryDto).toList())
-                .page(pets.getNumber())
-                .size(pets.getSize())
-                .totalElements(pets.getTotalElements())
-                .totalPages(pets.getTotalPages())
-                .last(pets.isLast())
-                .build();
-        return ResponseEntity.ok(ApiResponse.ok(pr));
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(petQueryPort.findAvailable(PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/by-organization/{organizationId}")
+    @Operation(summary = "List pets owned by an organization (paginated)")
+    public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getByOrganization(
+            @PathVariable UUID organizationId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(petQueryPort.findByOrganizationId(organizationId, PageRequest.of(page, size)))));
     }
 }

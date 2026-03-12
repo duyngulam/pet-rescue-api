@@ -31,6 +31,12 @@ public class OrganizationResponseDto {
     @Schema(example = "+84-28-1234-5678")
     private String phone;
 
+    @Schema(example = "contact@who.vn")
+    private String email;
+
+    @Schema(example = "facebook.com")
+    private String officialLink;
+
     @Schema(example = "10.762622")
     private Double latitude;
 

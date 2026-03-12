@@ -11,13 +11,43 @@ services:
     image: ${IMAGE_TAG:-petrescue-api:latest}
     container_name: petrescue-api
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     environment:
       SPRING_PROFILES_ACTIVE: production
+
+      # ── Server ─────────────────────────────────
+      # Render injects PORT; this forwards it to Spring Boot
+      SERVER_PORT: ${PORT:-8080}
+
+      # ── Database (NeonDB) ───────────────────────
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_SSL: ${DB_SSL:-true}
+
+      # ── Security ───────────────────────────────
+      JWT_SECRET: ${JWT_SECRET}
+
+      # ── Email verification ─────────────────────
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_VERIFICATION_URL: ${EMAIL_VERIFICATION_URL}
+
+      # ── SMTP ───────────────────────────────────
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      SPRING_MAIL_STARTTLS_ENABLE: ${SPRING_MAIL_STARTTLS_ENABLE:-true}
+      SPRING_MAIL_STARTTLS_REQUIRED: ${SPRING_MAIL_STARTTLS_REQUIRED:-true}
+
+      # ── JVM flags ──────────────────────────────
+      # -XX:TieredStopAtLevel=1 skips JIT tiers 2-4 → ~2x faster cold start
+      # Trade-off: lower peak throughput — acceptable for low-traffic / Render free tier
+      JAVA_TOOL_OPTIONS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Dspring.jmx.enabled=false -XX:TieredStopAtLevel=1"
+
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M

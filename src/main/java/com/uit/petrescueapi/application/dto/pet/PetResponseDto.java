@@ -1,5 +1,7 @@
 package com.uit.petrescueapi.application.dto.pet;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
 import com.uit.petrescueapi.domain.valueobject.Gender;
 import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -20,7 +22,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PetResponseDto {
 
-    private UUID id;
+    private UUID petId;
     private String name;
     private String species;
     private String breed;
@@ -38,6 +40,11 @@ public class PetResponseDto {
     private String rescueLocation;
     private List<String> imageUrls;
     private UUID shelterId;
+    
+    /** Optional: included when ?includeOrganization=true */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private OrganizationSummaryResponseDto organization;
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

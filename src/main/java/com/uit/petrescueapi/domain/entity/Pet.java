@@ -4,6 +4,7 @@ import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import com.uit.petrescueapi.domain.valueobject.Gender;
 import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,10 +20,10 @@ import java.util.UUID;
  * Persistence is handled by the infrastructure layer via mappers.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Pet {
+public class Pet extends BaseEntity {
 
     private UUID id;
     private String name;
@@ -44,13 +45,5 @@ public class Pet {
     private List<String> imageUrls = new ArrayList<>();
 
     private UUID shelterId;
-
-    // ── audit fields ────────────────────────────
-    private LocalDateTime createdAt;
-    private String createdBy;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
-    private boolean deleted;
-    private LocalDateTime deletedAt;
-    private String deletedBy;
 }
+

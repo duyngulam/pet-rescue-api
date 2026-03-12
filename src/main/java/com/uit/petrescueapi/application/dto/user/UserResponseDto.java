@@ -20,14 +20,26 @@ public class UserResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID userId;
 
+    @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
+    private UUID organizationId;
+
+    @Schema(example = "Paws Rescue Center")
+    private String organizationName;
+
+    @Schema(example = "OWNER", allowableValues = {"OWNER", "MANAGER", "MEMBER", "VOLUNTEER"})
+    private String organizationRole;
+
     @Schema(example = "johndoe")
     private String username;
 
     @Schema(example = "john@example.com")
     private String email;
 
-    @Schema(example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "BANNED"})
+    @Schema(example = "ACTIVE", allowableValues = {"PENDING_VERIFICATION", "ACTIVE", "INACTIVE", "BANNED"})
     private String status;
+
+    @Schema(example = "true")
+    private boolean emailVerified;
 
     private List<String> roles;
     private LocalDateTime createdAt;

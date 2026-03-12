@@ -123,6 +123,7 @@ public class MockPetDetailsController {
     // ── Diary (media) ────────────────────────────
 
     @GetMapping("/{petId}/diary")
+
     @Operation(summary = "List diary media for a pet (paginated)")
     public ResponseEntity<ApiResponse<PageResponse<MediaFileResponseDto>>> listDiary(
             @PathVariable UUID petId,

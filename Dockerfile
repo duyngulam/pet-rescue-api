@@ -1,35 +1,51 @@
-# ── Stage 1: Build ────────────────────────────────
+# ── Stage 1: Build ────────────────────────────────────────────
 FROM eclipse-temurin:21-jdk-alpine AS builder
-
 WORKDIR /app
 
-# Copy Gradle wrapper & build files first (layer caching)
+# Copy wrapper + config files first (separate layer — rarely changes)
 COPY gradlew gradlew.bat ./
 COPY gradle/ gradle/
 COPY build.gradle.kts settings.gradle.kts ./
 
-# Download dependencies (cached unless build files change)
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
+# Download dependencies — BuildKit cache persists between local builds
+# GitHub Actions: the RUN layer is cached via cache-from/to: type=gha in the push workflow
+RUN --mount=type=cache,target=/root/.gradle \
+    chmod +x gradlew && ./gradlew dependencies --no-daemon -q
 
 # Copy source and build
 COPY src/ src/
-RUN ./gradlew bootJar --no-daemon -x test
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew bootJar --no-daemon -x test -q && \
+    cp build/libs/*.jar app.jar && \
+    java -Djarmode=layertools -jar app.jar extract --destination extracted
 
-# ── Stage 2: Runtime ─────────────────────────────
+# ── Stage 2: Runtime ──────────────────────────────────────────
+# JRE only — no compiler, no javadoc (~100 MB smaller than JDK image)
 FROM eclipse-temurin:21-jre-alpine
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 WORKDIR /app
 
-COPY --from=builder /app/build/libs/*.jar app.jar
+# Copy jar layers in order of change frequency (least → most frequent)
+# dependencies/        : ~100 MB — rebuilds only when build.gradle.kts changes
+# spring-boot-loader/  : tiny   — rebuilds only on Spring Boot version bump
+# snapshot-dependencies: tiny   — rebuilds when SNAPSHOT deps change
+# application/         : ~5 MB  — rebuilds on every source change
+COPY --chown=appuser:appgroup --from=builder /app/extracted/dependencies/ ./
+COPY --chown=appuser:appgroup --from=builder /app/extracted/spring-boot-loader/ ./
+COPY --chown=appuser:appgroup --from=builder /app/extracted/snapshot-dependencies/ ./
+COPY --chown=appuser:appgroup --from=builder /app/extracted/application/ ./
 
-RUN chown -R appuser:appgroup /app
 USER appuser
-
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+# JAVA_TOOL_OPTIONS is picked up automatically by the JVM — no ENTRYPOINT changes needed.
+# Override this in your compose file or Render/Fly dashboard to tune per-environment.
+# -XX:TieredStopAtLevel=1  → skip JIT tiers 2-4 to shorten cold-start (add for serverless)
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Dspring.jmx.enabled=false"
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# JarLauncher is required for the extracted layered-jar structure (not java -jar)
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

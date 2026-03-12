@@ -26,4 +26,25 @@ public class OrganizationSummaryResponseDto {
 
     @Schema(example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "PENDING"})
     private String status;
+
+    @Schema(example = "Ngõ 621 giao lộ 907")
+    private String street_address;
+
+    @Schema(example = "1234")
+    private String ward_code;
+
+    @Schema(example = "Yên láng")
+    private String ward;
+
+    @Schema(example = "0123")
+    private String province_code;
+
+    @Schema(example = "Hà Nội")
+    private String province;
+
+    @Schema(example = "0842417411")
+    private String phone;
+
+    @Schema(example = "duyngu@gmail.com")
+    private String email;
 }

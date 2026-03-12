@@ -15,5 +15,6 @@ public class CreateAdoptionRequestDto {
 
     private UUID petId;
     private UUID organizationId;
-    private String note;
+    private String experience;
+    private String liveCondition;
 }

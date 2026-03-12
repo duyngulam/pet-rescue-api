@@ -55,6 +55,7 @@ release.properties
 .settings
 .springBeans
 .sts4-cache
+bin/
 
 # IDE - NetBeans
 /nbproject/private/
@@ -94,3 +95,4 @@ test-output/
 
 # Docker
 docker-compose.override.yml
+.env.production

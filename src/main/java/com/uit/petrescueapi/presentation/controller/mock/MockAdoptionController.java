@@ -34,7 +34,10 @@ public class MockAdoptionController {
     @GetMapping
     @Operation(summary = "List adoption applications (paginated)")
     public ResponseEntity<ApiResponse<PageResponse<AdoptionSummaryResponseDto>>> list(
-            @Parameter(description = "Filter by status") @RequestParam(required = false) String status,
+            @Parameter(description = "Filter by status,    PENDING,\n" +
+                    "    APPROVED,\n" +
+                    "    CANCELED,\n" +
+                    "    REJECTED ") @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
@@ -42,6 +45,8 @@ public class MockAdoptionController {
                 AdoptionSummaryResponseDto.builder()
                         .applicationId(APP1).petName("Buddy")
                         .applicantUsername("johndoe").status("PENDING")
+                        .experience("Tung nuoi 20 con meo 1 luc")
+                        .liveCondition("nguoi Ho Noi goc")
                         .createdAt(LocalDateTime.now()).build());
         PageResponse<AdoptionSummaryResponseDto> pr = PageResponse.<AdoptionSummaryResponseDto>builder()
                 .content(apps).page(page).size(size)
@@ -55,7 +60,7 @@ public class MockAdoptionController {
     public ResponseEntity<ApiResponse<AdoptionResponseDto>> create(@RequestBody CreateAdoptionRequestDto req) {
         AdoptionResponseDto dto = sampleApp(UUID.randomUUID(), "PENDING");
         dto.setPetId(req.getPetId());
-        dto.setNote(req.getNote());
+        dto.setExperience(req.getLiveCondition());
         return ResponseEntity.status(201).body(ApiResponse.created(dto));
     }
 
@@ -98,7 +103,8 @@ public class MockAdoptionController {
                 .applicationId(id).petId(PET1).petName("Buddy")
                 .applicantId(USER1).applicantUsername("johndoe")
                 .organizationId(ORG1).status(status)
-                .note("I have experience with dogs and a large backyard.")
+                .experience("I have experience with dogs and a large backyard.")
+                .liveCondition("Apartment at HaNoi")
                 .createdAt(LocalDateTime.now())
                 .build();
     }

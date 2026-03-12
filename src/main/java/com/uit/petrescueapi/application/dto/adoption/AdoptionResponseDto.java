@@ -35,7 +35,10 @@ public class AdoptionResponseDto {
     private String status;
 
     @Schema(example = "I have experience with dogs and a large backyard.")
-    private String note;
+    private String experience;
+
+    @Schema(example = "House, salary or pet house")
+    private String liveCondition;
 
     private LocalDateTime createdAt;
     private LocalDateTime decidedAt;

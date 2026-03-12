@@ -1,446 +1,430 @@
+
+
+
 # Pet Rescue API
 
-A **minimal, runnable skeleton** demonstrating Clean Architecture (Hexagonal / Ports & Adapters) with Spring Boot.
-The project contains a single **Pet CRUD flow** so you can study the architecture without noise from authentication, authorization, or external service integrations.
+A **production-grade REST API** for managing pet rescue operations — connecting rescued animals with adopters through shelters and vet centers. Built with **Clean Architecture**, **CQRS**, and **JWT authentication** on Spring Boot 3.5 / Java 21.
 
 ---
 
-## Quick Start
+## What This App Does
 
-### Prerequisites
+Pet Rescue API is the backend for a pet rescue platform where:
 
-| Tool | Version | Required for |
-|------|---------|-------------|
-| **JDK** | 21 + | Local dev (without Docker) |
-| **Docker** | 20 + | Docker-based dev / deployment |
-| **Gradle** | (wrapper included) | — |
+- **Shelters and vet centers** register rescued animals (dogs, cats, etc.) with photos, medical status, and location
+- **Users** browse available pets, view details, and submit adoption applications
+- **Organization staff** manage their animals, process adoptions, and track rescue cases
+- **Admins** oversee the platform, manage roles, and moderate content
 
-> Docker is required — the app connects to PostgreSQL. Run `docker-compose up -d postgres` to start the DB.
+### Core Features (Implemented)
 
-### Run
+| Feature | Status | Description |
+|---------|--------|------------|
+| **Pet Management** | ✅ Full CRUD | Create, update, delete, status transitions (AVAILABLE → PENDING → ADOPTED, etc.) |
+| **Authentication** | ✅ Complete | Register, login, JWT access/refresh tokens, email verification, logout |
+| **RBAC Authorization** | ✅ Complete | Role-based access (USER, ADMIN, MEMBER) with Spring Security |
+| **Organization Profiles** | ✅ Domain + Data | Shelters/vet centers linked to pets via JOIN queries |
+| **Pet Query (CQRS)** | ✅ Optimized | Dedicated read path with LEFT JOIN projections — zero N+1 queries |
+| **Pets by Organization** | ✅ Complete | Fetch paged pets via `pet_ownerships` join table (ownership-based, not FK) |
 
-```bash
-# 1. Start PostgreSQL container
-docker-compose up -d postgres
+### Planned Features (Mock API Ready)
 
-# 2. Run the app
-./gradlew bootRun          # Linux / macOS
-.\gradlew.bat bootRun      # Windows
-```
+Swagger UI shows the full planned API surface with mock endpoints for: **Adoptions**, **Posts**, **Rescue Cases**, **Media Upload**, **Tags**, **User Profiles**, and **Role Management**.
 
-The app starts on **<http://localhost:8080>**.
+---
 
-### Useful URLs
+## Why This Architecture?
 
-| URL | Purpose |
-|-----|---------|
-| <http://localhost:8080/swagger-ui.html> | Interactive API docs (Swagger UI) |
-| <http://localhost:8080/api-docs> | Raw OpenAPI 3.0 spec (JSON) |
-| <http://localhost:8080/actuator/health> | Health check |
+This project demonstrates **enterprise-grade patterns** commonly used in real-world Java microservices:
 
-### Build & Test
-
-```bash
-./gradlew build       # compile + run tests
-./gradlew test        # tests only
-```
-
-### Run with Docker (local Postgres)
-
-```bash
-# Start app + PostgreSQL container
-docker-compose up -d
-
-# View logs
-docker-compose logs -f app
-
-# Stop
-docker-compose down
-```
-
-This uses profile `development` with a local PostgreSQL container.
-
-### Run with Gradle (still needs Docker Postgres)
-
-```bash
-# Start only the Postgres container
-docker-compose up -d postgres
-
-# Run the app with Gradle
-./gradlew bootRun
-```
+| Pattern | Why It Matters |
+|---------|---------------|
+| **Clean Architecture** | Business logic is framework-independent — swap Spring for Quarkus without touching domain code |
+| **CQRS** | Read and write paths are separated — queries bypass domain validation for direct DB-to-DTO mapping |
+| **Ports & Adapters** | Domain defines interfaces; infrastructure provides implementations — testable without a database |
+| **Interface Projections** | Spring Data projections fetch only needed columns via JOIN — no ORM overhead, no N+1 |
+| **JWT + Refresh Token Rotation** | Stateless auth with secure token lifecycle — industry-standard for SPAs and mobile apps |
 
 ---
 
 ## Architecture Overview
 
-The project follows **Clean Architecture** organized into four top-level packages:
-
 ```
-com.uit.petrescueapi
-├── domain            ← Enterprise business rules (innermost circle)
-├── application       ← Use-cases & ports (application business rules)
-├── infrastructure    ← Frameworks, DB, config (outermost circle)
-└── presentation      ← REST controllers, exception advice (delivery mechanism)
-```
-
-### Dependency rule
-
-Dependencies point **inward only**:
-
-```
-presentation  ──→  application  ──→  domain
-infrastructure ──→  application  ──→  domain
-```
-
-- `domain` depends on **nothing** (pure Java + Lombok).
-- `application` depends on `domain`.
-- `infrastructure` and `presentation` depend on `application` (and transitively `domain`), but **never on each other**.
-
-### Request flow
-
-```
-HTTP Request
-   │
-   ▼
-┌──────────────────────────────────────────────────┐
-│  CorrelationIdFilter  (assigns X-Correlation-ID) │
-│  LoggingFilter        (logs request/response)    │
-│  SecurityFilterChain  (permit all — skeleton)    │
-└──────────────────────────────────────────────────┘
-   │
-   ▼
-PetController                      ← presentation layer
-   │  calls PetInputPort.create(cmd)
-   ▼
-PetUseCase (implements PetInputPort) ← application layer
-   │  maps command → domain entity
-   │  calls PetDomainService.create(pet)
-   ▼
-PetDomainService                   ← domain layer
-   │  applies business rules (status = AVAILABLE, UUID, timestamps)
-   │  calls PetRepository.save(pet)
-   ▼
-PetRepositoryAdapter               ← infrastructure layer
-   │  implements PetRepository (domain port)
-   │  uses PetEntityMapper to convert domain ↔ JPA entity
-   │  delegates to PetJpaRepository (Spring Data)
-   ▼
-PostgreSQL (Docker container / NeonDB)
+┌─────────────────────────────────────────────────────────────────┐
+│                     PRESENTATION LAYER                          │
+│  Controllers (REST)  ·  GlobalExceptionAdvice  ·  ApiResponse   │
+├────────────────────────────┬────────────────────────────────────┤
+│      COMMAND PATH          │           QUERY PATH (CQRS)        │
+│                            │                                    │
+│  PetCommandPort            │  PetQueryPort                      │
+│       ↓                    │       ↓                            │
+│  PetCommandUseCase         │  PetQueryUseCase                   │
+│       ↓                    │       ↓                            │
+│  PetDomainService          │  PetQueryDataPort (output port)    │
+│  (business rules,          │       ↓                            │
+│   @Transactional)          │  PetQueryAdapter                   │
+│       ↓                    │  (projection → DTO mapping)        │
+│  PetRepository (port)      │       ↓                            │
+│       ↓                    │  PetQueryJpaRepository             │
+│  PetRepositoryAdapter      │  (LEFT JOIN JPQL queries)          │
+│       ↓                    │                                    │
+│  PetJpaRepository          │                                    │
+├────────────────────────────┴────────────────────────────────────┤
+│                    INFRASTRUCTURE LAYER                         │
+│  JPA Entities  ·  MapStruct Mappers  ·  Security  ·  Email      │
+├─────────────────────────────────────────────────────────────────┤
+│                      DOMAIN LAYER (pure Java)                   │
+│  Entities  ·  Value Objects  ·  Repository Ports  ·  Services   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Key Insight: Query Path Bypasses Domain
 
-## Package-by-Package Breakdown
-
-### 1. Domain Layer (`domain/`)
-
-The innermost layer — contains **business entities, value objects, repository contracts, domain services, and exceptions**. Zero framework dependencies (only Lombok for boilerplate reduction).
-
-| File | Purpose |
-|------|---------|
-| `entity/Pet.java` | **Aggregate root.** Pure POJO with all pet fields (name, species, breed, age, gender, status, etc.) plus audit fields (createdAt, updatedAt, deleted). No JPA annotations — persistence is the infrastructure's concern. |
-| `valueobject/PetStatus.java` | Enum: `AVAILABLE`, `ADOPTED`, `PENDING`, `FOSTERED`, `UNAVAILABLE`. |
-| `valueobject/Gender.java` | Enum: `MALE`, `FEMALE`, `UNKNOWN`. |
-| `valueobject/HealthStatus.java` | Enum: `HEALTHY`, `UNDER_TREATMENT`, `RECOVERING`, `SPECIAL_NEEDS`. |
-| `repository/PetRepository.java` | **Domain port** (interface). Declares `save`, `findById`, `findAll`, `findByStatus`, `deleteById`, `existsById`. Implemented by the infrastructure layer. |
-| `service/PetDomainService.java` | **Business rules live here.** New pets always start as `AVAILABLE`. Status transitions are validated against an explicit allow-list (`ALLOWED_TRANSITIONS` map). Deletion is always soft-delete. `@Transactional` is applied at this layer — nowhere else. |
-| `exception/BaseException.java` | Abstract base with `HttpStatus` and `errorCode`. |
-| `exception/ResourceNotFoundException.java` | Thrown when a pet is not found (HTTP 404). |
-| `exception/BusinessException.java` | Thrown for business rule violations (HTTP 400). |
-
-**Key business rule — Status transition matrix:**
-
-| From | Allowed transitions |
-|------|-------------------|
-| AVAILABLE | PENDING, FOSTERED, UNAVAILABLE |
-| PENDING | ADOPTED, AVAILABLE |
-| ADOPTED | AVAILABLE |
-| FOSTERED | AVAILABLE, PENDING, ADOPTED |
-| UNAVAILABLE | AVAILABLE, FOSTERED |
-
-### 2. Application Layer (`application/`)
-
-Orchestrates use-cases. Defines **ports** (interfaces) that decouple the domain from infrastructure, and **commands** (CQRS write-side objects) with Jakarta Bean Validation.
-
-| File | Purpose |
-|------|---------|
-| `port/in/PetInputPort.java` | **Driving port** — what the outside world (controllers) can ask the application to do: `create`, `update`, `delete`, `findById`, `findAll`, `findAvailable`, `changeStatus`. |
-| `port/out/PetOutputPort.java` | **Driven port** — what persistence capabilities the application needs. Same shape as `PetRepository` but kept as a separate interface so the application layer never depends on the domain repository directly. |
-| `command/CreatePetCommand.java` | Write command with validation: `@NotBlank name`, `@NotBlank species`, `@Min(0) @Max(600) age`, `@DecimalMin/@DecimalMax weight`, `@PastOrPresent rescueDate`, etc. |
-| `command/UpdatePetCommand.java` | Partial-update command (all fields optional). |
-| `usecase/PetUseCase.java` | **Implements `PetInputPort`.** Maps commands → domain `Pet` objects, then delegates to `PetDomainService`. This is the application's orchestration layer. |
-| `dto/PetDto.java` | Read-side DTO returned by queries. Includes computed `ageDisplay` field (e.g. "2 years 3 months"). |
-
-### 3. Infrastructure Layer (`infrastructure/`)
-
-Adapters for external concerns — database, security, logging, serialization, API docs.
-
-#### Persistence (`infrastructure/persistence/`)
-
-| File | Purpose |
-|------|---------|
-| `PetJpaEntity.java` | JPA `@Entity` mapped to the `pets` table. Has all JPA annotations (`@Table`, `@Index`, `@Enumerated`, `@Column`, `@ElementCollection` for image URLs) and audit fields via `@EntityListeners(AuditingEntityListener.class)`. |
-| `PetJpaRepository.java` | Spring Data JPA repository. Custom JPQL queries: `findByIdAndNotDeleted` and `findAllNotDeleted` filter out soft-deleted records; `findByStatus` filters by pet status. |
-| `PetEntityMapper.java` | MapStruct mapper: domain `Pet` ↔ JPA `PetJpaEntity`. Generates implementation at compile time. |
-| `PetRepositoryAdapter.java` | **Adapter** implementing both `PetRepository` (domain) and `PetOutputPort` (application). Bridges domain operations to Spring Data via the mapper. No `@Transactional` — transactions are managed at the domain service layer. |
-
-#### Configuration (`infrastructure/config/`)
-
-| File | Purpose |
-|------|---------|
-| `SecurityConfig.java` | **Skeleton** — permits all requests, stateless sessions, CSRF disabled. In production you'd add JWT filters and role-based access here. |
-| `JpaAuditingConfig.java` | Enables `@EnableJpaAuditing`. Returns `"system"` as the auditor for `@CreatedBy` / `@LastModifiedBy` fields. |
-| `JacksonConfig.java` | Configures Jackson: `JavaTimeModule` for Java 8 date/time, writes dates as ISO strings (not timestamps), excludes null fields, ignores unknown properties on deserialization. |
-| `OpenApiConfig.java` | `@OpenAPIDefinition` with API title, version, and server URL for Swagger UI. |
-| `CorrelationIdFilter.java` | **Highest precedence filter.** Reads or generates `X-Correlation-ID` header, stores it in MDC (for structured logging), and adds it to the response. |
-| `LoggingFilter.java` | Logs incoming requests and outgoing responses with latency. Skips actuator and swagger paths to reduce noise. |
-
-### 4. Presentation Layer (`presentation/`)
-
-REST API delivery mechanism — controllers, exception handling, and web mappers.
-
-| File | Purpose |
-|------|---------|
-| `controller/PetController.java` | REST endpoints at `/api/v1/pets`. Operations: `POST /` (create), `GET /` (list all), `GET /{id}` (get one), `GET /available` (list available), `PUT /{id}` (update), `PATCH /{id}/status?status=X` (change status), `DELETE /{id}` (soft-delete). All responses use a `{ "success": true, "data": ... }` envelope. |
-| `advice/GlobalExceptionAdvice.java` | `@RestControllerAdvice` — uniform error JSON envelope. Handles: `BaseException` (domain errors), `MethodArgumentNotValidException` (validation), `ConstraintViolationException`, `IllegalStateException` (bad status transitions), and a catch-all for unexpected errors. |
-| `mapper/PetWebMapper.java` | MapStruct mapper: domain `Pet` → `PetDto`. Includes a `formatAge()` default method that converts months to human-readable text (e.g., `24` → `"2 years"`). |
-
----
-
-## API Endpoints
-
-All endpoints are under `/api/v1/pets`:
-
-| Method | Path | Description | Request Body |
-|--------|------|-------------|-------------|
-| `POST` | `/api/v1/pets` | Create a new pet | `CreatePetCommand` (JSON) |
-| `GET` | `/api/v1/pets` | List all pets | — |
-| `GET` | `/api/v1/pets/{id}` | Get pet by ID | — |
-| `GET` | `/api/v1/pets/available` | List available pets | — |
-| `PUT` | `/api/v1/pets/{id}` | Update a pet | `UpdatePetCommand` (JSON) |
-| `PATCH` | `/api/v1/pets/{id}/status?status=PENDING` | Change pet status | — (query param) |
-| `DELETE` | `/api/v1/pets/{id}` | Soft-delete a pet | — |
-
-### Example: Create a pet
-
-```bash
-curl -X POST http://localhost:8080/api/v1/pets \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Buddy",
-    "species": "Dog",
-    "breed": "Golden Retriever",
-    "age": 24,
-    "gender": "MALE",
-    "color": "Golden",
-    "weight": 30.5,
-    "description": "A friendly, well-trained family dog",
-    "vaccinated": true,
-    "neutered": true,
-    "rescueDate": "2024-01-15",
-    "rescueLocation": "Central Park"
-  }'
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "441963ab-f1e2-4472-8a6e-068238371404",
-    "name": "Buddy",
-    "species": "Dog",
-    "breed": "Golden Retriever",
-    "age": 24,
-    "ageDisplay": "2 years",
-    "gender": "MALE",
-    "color": "Golden",
-    "weight": 30.5,
-    "description": "A friendly, well-trained family dog",
-    "status": "AVAILABLE",
-    "vaccinated": true,
-    "neutered": true,
-    "rescueDate": "2024-01-15",
-    "rescueLocation": "Central Park",
-    "imageUrls": [],
-    "createdAt": "2024-01-15T10:30:00.000"
-  }
-}
-```
+The **command path** flows through the domain service where business rules (status transitions, validation) are enforced. The **query path** goes directly from the application layer to an infrastructure adapter that executes optimized JOIN queries and returns DTOs — no domain objects, no entity mapping overhead.
 
 ---
 
 ## Tech Stack
 
-| Technology | Purpose |
-|-----------|---------|
-| **Spring Boot 3.5** | Application framework |
-| **Java 21** | Language (Gradle toolchain) |
-| **Spring Data JPA** | Repository abstraction |
-| **PostgreSQL** | Database (Docker for local, NeonDB for prod) |
-| **PostgreSQL driver** | Included for production deployment |
-| **Spring Security** | Skeleton (permit all) |
-| **MapStruct 1.6** | Compile-time DTO/entity mapping |
-| **Lombok** | Boilerplate reduction |
-| **springdoc-openapi 2.8** | Swagger UI + OpenAPI spec |
-| **Spring Boot Actuator** | Health & info endpoints |
-| **Logback** | Logging with correlation IDs |
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| **Spring Boot** | 3.5.10 | Application framework |
+| **Java** | 21 (toolchain) | Language |
+| **Spring Data JPA** | — | Repository abstraction + interface projections |
+| **PostgreSQL** | 16 | Database (Docker for local, NeonDB for prod) |
+| **Spring Security** | — | JWT stateless authentication + RBAC |
+| **jjwt** | 0.12.6 | HMAC-SHA JWT token generation/validation |
+| **Flyway** | — | Database migrations |
+| **MapStruct** | 1.6.3 | Compile-time DTO/entity mapping |
+| **Lombok** | — | Boilerplate reduction |
+| **springdoc-openapi** | 2.8.5 | Swagger UI + OpenAPI spec |
+| **Spring Boot Actuator** | — | Health & info endpoints |
+| **Docker + Compose** | — | Containerized local dev and deployment |
 
 ---
 
 ## Project Structure
 
 ```
-pet-rescue-api/
-├── build.gradle.kts                 # Gradle build (Kotlin DSL)
-├── settings.gradle.kts              # Gradle settings
-├── gradlew / gradlew.bat           # Gradle wrapper scripts
-├── src/
-│   ├── main/
-│   │   ├── java/com/uit/petrescueapi/
-│   │   │   ├── PetRescueApiApplication.java      # Spring Boot entry point
-│   │   │   │
-│   │   │   ├── domain/                            # ① DOMAIN LAYER
-│   │   │   │   ├── entity/
-│   │   │   │   │   └── Pet.java                   #    Aggregate root (pure POJO)
-│   │   │   │   ├── valueobject/
-│   │   │   │   │   ├── PetStatus.java             #    Status enum
-│   │   │   │   │   ├── Gender.java                #    Gender enum
-│   │   │   │   │   └── HealthStatus.java          #    Health status enum
-│   │   │   │   ├── repository/
-│   │   │   │   │   └── PetRepository.java         #    Domain port (interface)
-│   │   │   │   ├── service/
-│   │   │   │   │   └── PetDomainService.java      #    Business rules + transactions
-│   │   │   │   └── exception/
-│   │   │   │       ├── BaseException.java         #    Abstract base exception
-│   │   │   │       ├── ResourceNotFoundException.java
-│   │   │   │       └── BusinessException.java
-│   │   │   │
-│   │   │   ├── application/                       # ② APPLICATION LAYER
-│   │   │   │   ├── port/
-│   │   │   │   │   ├── in/
-│   │   │   │   │   │   └── PetInputPort.java      #    Driving port (interface)
-│   │   │   │   │   └── out/
-│   │   │   │   │       └── PetOutputPort.java     #    Driven port (interface)
-│   │   │   │   ├── command/
-│   │   │   │   │   ├── CreatePetCommand.java      #    Write command + validation
-│   │   │   │   │   └── UpdatePetCommand.java      #    Update command
-│   │   │   │   ├── usecase/
-│   │   │   │   │   └── PetUseCase.java            #    Implements PetInputPort
-│   │   │   │   └── dto/
-│   │   │   │       └── PetDto.java                #    Read-side DTO
-│   │   │   │
-│   │   │   ├── infrastructure/                    # ③ INFRASTRUCTURE LAYER
-│   │   │   │   ├── persistence/
-│   │   │   │   │   ├── PetJpaEntity.java          #    JPA entity (@Entity)
-│   │   │   │   │   ├── PetJpaRepository.java      #    Spring Data repository
-│   │   │   │   │   ├── PetEntityMapper.java       #    MapStruct: domain ↔ JPA
-│   │   │   │   │   └── PetRepositoryAdapter.java  #    Adapter: domain port → JPA
-│   │   │   │   └── config/
-│   │   │   │       ├── SecurityConfig.java        #    Permit-all skeleton
-│   │   │   │       ├── JpaAuditingConfig.java     #    @EnableJpaAuditing
-│   │   │   │       ├── JacksonConfig.java         #    JSON serialization
-│   │   │   │       ├── OpenApiConfig.java         #    Swagger/OpenAPI setup
-│   │   │   │       ├── CorrelationIdFilter.java   #    Request correlation IDs
-│   │   │   │       └── LoggingFilter.java         #    Request/response logging
-│   │   │   │
-│   │   │   └── presentation/                      # ④ PRESENTATION LAYER
-│   │   │       ├── controller/
-│   │   │       │   └── PetController.java         #    REST endpoints /api/v1/pets
-│   │   │       ├── advice/
-│   │   │       │   └── GlobalExceptionAdvice.java #    Uniform error handling
-│   │   │       └── mapper/
-│   │   │           └── PetWebMapper.java          #    MapStruct: domain → DTO
-│   │   │
-│   │   └── resources/
-│   │       ├── application.properties             # Default (PostgreSQL via Docker)
-│   │       ├── application-production.properties  # NeonDB (cloud Postgres)
-│   │       └── logback-spring.xml                 # Console logging with correlation ID
-│   │
-│   └── test/
-│       └── java/.../PetRescueApiApplicationTests.java
+src/main/java/com/uit/petrescueapi/
 │
-├── Dockerfile                       # Multi-stage build (JDK 21)
-├── docker-compose.yml               # Local dev: app + Postgres
-├── docker-compose.prod.yml          # Production: app only (NeonDB)
-├── .env.example                     # Environment variable template
-├── .dockerignore
+├── domain/                                 # ① DOMAIN LAYER (pure Java + Lombok only)
+│   ├── entity/
+│   │   ├── BaseEntity.java                 #   Audit fields: createdAt/By, updatedAt/By, deleted/At/By
+│   │   ├── Pet.java                        #   Aggregate root — 20+ fields, imageUrls, shelterId
+│   │   ├── User.java                       #   verifyEmail(), deactivate(), ban(), hasRole()
+│   │   ├── Role.java                       #   id, code, name, description
+│   │   ├── Organization.java               #   Shelter/vet center with address, coordinates, status
+│   │   ├── RefreshToken.java               #   Token rotation: isExpired(), isUsable(), revoke()
+│   │   └── EmailVerificationToken.java     #   One-time token: isExpired(), isUsable(), markUsed()
+│   ├── valueobject/
+│   │   ├── PetStatus.java                  #   AVAILABLE | ADOPTED | PENDING | FOSTERED | UNAVAILABLE
+│   │   ├── Gender.java                     #   MALE | FEMALE | UNKNOWN
+│   │   ├── HealthStatus.java               #   HEALTHY | UNDER_TREATMENT | RECOVERING | SPECIAL_NEEDS
+│   │   ├── UserStatus.java                 #   PENDING_VERIFICATION | ACTIVE | INACTIVE | BANNED
+│   │   ├── SystemRole.java                 #   USER | ADMIN | MEMBER
+│   │   └── OrganizationRole.java           #   OWNER | STAFF | VET
+│   ├── repository/                         #   Domain ports (interfaces only)
+│   │   ├── PetRepository.java              #   save, findById, findAll, findByStatus (paginated)
+│   │   ├── UserRepository.java             #   findById, findByEmail, findByUsername, existsBy*
+│   │   ├── RoleRepository.java             #   findByCode
+│   │   ├── OrganizationRepository.java     #   findAll, findById, findAllByIds (batch)
+│   │   ├── RefreshTokenRepository.java     #   save, findByToken, revokeAllByUserId
+│   │   └── EmailVerificationTokenRepository.java
+│   ├── service/
+│   │   ├── PetDomainService.java           #   ⭐ ALLOWED_TRANSITIONS map, CRUD, @Transactional
+│   │   ├── UserDomainService.java          #   findById/ByEmail, updateProfile
+│   │   └── AuthDomainService.java          #   register, email verification, refresh token rotation
+│   └── exception/
+│       ├── BaseException.java              #   Abstract (HttpStatus + errorCode)
+│       ├── ResourceNotFoundException.java  #   404
+│       ├── ResourceAlreadyExistsException.java
+│       ├── BusinessException.java          #   400
+│       ├── UnauthorizedException.java      #   401
+│       └── ForbiddenException.java         #   403
 │
-└── .github/
-    ├── copilot-instructions.md      # AI coding agent guidance
-    └── workflows/
-        ├── ci.yml                   # Build & test on every push/PR
-        └── deploy.yml               # Build image → push → deploy to prod
+├── application/                            # ② APPLICATION LAYER
+│   ├── port/
+│   │   ├── command/                        #   Write port interfaces (11 total)
+│   │   │   ├── PetCommandPort.java         #   create, update, delete, changeStatus
+│   │   │   ├── AuthCommandPort.java        #   register, login, refresh, verifyEmail, logout
+│   │   │   └── ... (9 more for future features)
+│   │   ├── query/                          #   Read port interfaces (10 total, return DTOs)
+│   │   │   ├── PetQueryPort.java           #   findById → PetResponseDto, findAll/Available → Page<Summary>
+│   │   │   └── ... (9 more for future features)
+│   │   └── out/
+│   │       └── PetQueryDataPort.java       #   ⭐ Output port for CQRS query adapter 
+│   ├── usecase/
+│   │   ├── PetCommandUseCase.java          #   Implements PetCommandPort → delegates to PetDomainService
+│   │   ├── PetQueryUseCase.java            #   Implements PetQueryPort → delegates to PetQueryDataPort
+│   │   └── AuthCommandUseCase.java         #   Orchestrates: domain + JWT + email
+│   └── dto/
+│       ├── pet/                            #   Create*, Update*, PetResponseDto, PetSummaryResponseDto
+│       ├── auth/                           #   Register*, Login*, RefreshToken*, AuthTokenResponseDto
+│       ├── user/                           #   UserResponseDto, UserSummaryResponseDto
+│       ├── organization/                   #   5 DTOs (Create*, Response*, Summary*, Member*, AddMember*)
+│       └── ... (adoption, post, rescue, role, tag, media DTOs)
+│
+├── infrastructure/                         # ③ INFRASTRUCTURE LAYER
+│   ├── persistence/
+│   │   ├── entity/                         #   JPA entities (@Entity, @Table, audit listeners)
+│   │   │   ├── PetJpaEntity.java           #   @ElementCollection for imageUrls, 3 indexes
+│   │   │   ├── UserJpaEntity.java          #   @ManyToMany roles via user_roles join table
+│   │   │   └── ... (Role, Organization, RefreshToken, EmailVerificationToken)
+│   │   ├── repository/                     #   Spring Data JPA repositories
+│   │   │   ├── PetJpaRepository.java       #   Command-side: findAllNotDeleted, findByStatus
+│   │   │   ├── PetQueryJpaRepository.java  #   ⭐ Query-side: LEFT JOIN JPQL projections
+│   │   │   └── ... (User, Role, Organization, RefreshToken, EmailVerificationToken)
+│   │   ├── mapper/                         #   MapStruct: domain ↔ JPA entity
+│   │   │   ├── PetEntityMapper.java
+│   │   │   └── ... (User, Role, Organization, RefreshToken, EmailVerificationToken)
+│   │   ├── adapter/                        #   Implements domain repository ports
+│   │   │   ├── PetRepositoryAdapter.java   #   Command-side adapter
+│   │   │   ├── PetQueryAdapter.java        #   ⭐ Query-side: projection → DTO mapping
+│   │   │   └── ... (User, Role, Organization, RefreshToken, EmailVerificationToken)
+│   │   └── projection/                     #   Spring Data interface projections
+│   │       ├── PetSummaryProjection.java   #   Pet fields + org name/type/status (via JOIN)
+│   │       └── PetDetailProjection.java    #   All pet fields + org summary (via JOIN)
+│   ├── config/
+│   │   ├── SecurityConfig.java             #   JWT stateless, BCrypt, public/protected paths
+│   │   ├── JpaAuditingConfig.java          #   @EnableJpaAuditing
+│   │   ├── JacksonConfig.java              #   JavaTimeModule, no nulls, ISO dates
+│   │   ├── OpenApiConfig.java              #   Swagger metadata
+│   │   ├── AsyncConfig.java                #   @EnableAsync for email sending
+│   │   ├── SwaggerRedirectConfig.java      #   / → /swagger-ui.html
+│   │   └── filter/
+│   │       ├── CorrelationIdFilter.java    #   X-Correlation-ID → MDC
+│   │       └── LoggingFilter.java          #   Request/response logging with latency
+│   ├── security/
+│   │   ├── JwtService.java                 #   HMAC-SHA, generate/validate tokens, extract claims
+│   │   ├── JwtAuthenticationFilter.java    #   OncePerRequestFilter, Bearer token extraction
+│   │   ├── JwtAuthenticationEntryPoint.java#   JSON 401 response
+│   │   └── CustomUserDetailsService.java   #   Loads UserDetails from DB by UUID or email
+│   └── email/
+│       └── EmailService.java               #   @Async HTML verification email via JavaMailSender
+│
+└── presentation/                           # ④ PRESENTATION LAYER
+    ├── dto/
+    │   ├── ApiResponse.java                #   { success, status, message, data, timestamp, correlationId }
+    │   └── PageResponse.java               #   { content, page, size, totalElements, totalPages, last }
+    ├── mapper/
+    │   └── PetWebMapper.java               #   MapStruct: domain Pet → PetResponseDto (command path only)
+    ├── controller/
+    │   ├── AuthController.java             #   /api/v1/auth — register, login, refresh, verify, logout, /me
+    │   ├── PetController.java              #   /api/v1/pets — CRUD + CQRS queries (7 endpoints)
+    │   ├── DevController.java              #   /api/v1/dev — dev-only endpoint (@Profile("development"))
+    │   └── mock/                           #   9 mock controllers (Swagger API surface for frontend)
+    │       ├── MockAdoptionController.java
+    │       ├── MockOrganizationController.java
+    │       ├── MockUserController.java
+    │       ├── MockPostController.java
+    │       ├── MockRescueCaseController.java
+    │       ├── MockMediaController.java
+    │       ├── MockRoleController.java
+    │       ├── MockTagController.java
+    │       └── MockPetDetailsController.java
+    └── advice/
+        └── GlobalExceptionAdvice.java      #   @RestControllerAdvice — 6 handlers, uniform error envelope
+```
+
+---
+
+## CQRS Deep Dive
+
+### Why Separate Read and Write?
+
+In a typical CRUD app, both reads and writes go through the same domain service. This works, but:
+- **Reads don't need business rules** — they just fetch and transform data
+- **Reads can be optimized** with JOIN queries and projections that don't map to domain entities
+- **Writes need validation** — status transitions, uniqueness checks, domain invariants
+
+CQRS lets each path be optimized independently.
+
+### Command Path (Writes)
+
+```
+Controller
+  → PetCommandPort (interface)
+    → PetCommandUseCase (DTO → domain mapping)
+      → PetDomainService (business rules, @Transactional)
+        → PetRepository (domain port)
+          → PetRepositoryAdapter (domain ↔ JPA mapping)
+            → PetJpaRepository (Spring Data)
+```
+
+Business rules enforced here:
+- **Status transitions**: `ALLOWED_TRANSITIONS` map — e.g., `AVAILABLE → [PENDING, FOSTERED, UNAVAILABLE]`
+- **Soft delete**: Sets `deleted = true`, `deletedAt`, `deletedBy` instead of removing rows
+- **Validation**: Bean Validation on request DTOs + domain-level checks
+
+### Query Path (Reads — Bypasses Domain)
+
+```
+Controller
+  → PetQueryPort (interface, returns DTOs)
+    → PetQueryUseCase (thin passthrough)
+      → PetQueryDataPort (output port)
+        → PetQueryAdapter (projection → DTO mapping)
+          → PetQueryJpaRepository (LEFT JOIN JPQL)
+            → Interface Projections (PetSummaryProjection, PetDetailProjection)
+```
+
+Optimizations:
+- **LEFT JOIN** in SQL — organization data fetched in the same query (no N+1)
+- **Interface projections** — Spring Data maps only the needed columns, no full entity hydration
+- **No domain objects** — results go directly from DB → projection → DTO → controller
+- **Separate image query** — for detail view, `@ElementCollection` imageUrls fetched in a second query (unavoidable with JPA collections, but still only 2 queries total)
+
+---
+
+## Authentication & Authorization
+
+### Flow
+
+```
+Register → Email Verification → Login → Access Token (JWT) + Refresh Token (DB)
+                                          ↓
+                               Request with Bearer token
+                                          ↓
+                               JwtAuthenticationFilter extracts token
+                                          ↓
+                               JwtService validates signature + expiry
+                                          ↓
+                               CustomUserDetailsService loads user from DB
+                                          ↓
+                               SecurityContext set → endpoint accessed
+```
+
+### Token Strategy
+
+| Token | Storage | Lifetime | Purpose |
+|-------|---------|----------|---------|
+| **Access Token** | Client (header) | 15 min (configurable) | Stateless API authentication |
+| **Refresh Token** | Database | 7 days (configurable) | Obtain new access token without re-login |
+
+- **Rotation**: Each refresh generates a new refresh token and invalidates the old one
+- **Revocation**: Logout revokes all refresh tokens for the user
+- **Claims**: `sub` = userId (UUID), `email`, `roles` (list of role codes)
+
+### Public Endpoints (No Auth Required)
+
+```
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+POST   /api/v1/auth/refresh
+GET    /api/v1/auth/verify-email
+POST   /api/v1/auth/resend-verification
+GET    /api/v1/pets/**
+GET    /swagger-ui.html, /api-docs
+GET    /actuator/health
+```
+
+---
+
+## API Endpoints
+
+### Authentication (`/api/v1/auth`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/register` | Register new user (sends verification email) |
+| `POST` | `/login` | Login → access + refresh tokens |
+| `POST` | `/refresh` | Rotate refresh token → new access + refresh tokens |
+| `GET` | `/verify-email?token=...` | Verify email address |
+| `POST` | `/resend-verification` | Resend verification email |
+| `POST` | `/logout` | Revoke all refresh tokens |
+| `GET` | `/me` | Get current user profile (requires auth) |
+
+### Pet Management (`/api/v1/pets`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/` | Create a new pet |
+| `GET` | `/?page=0&size=20` | List all pets (paginated, with org data) |
+| `GET` | `/{id}` | Get pet detail (with org data + images) |
+| `GET` | `/available?page=0&size=20` | List available pets only |
+| `PUT` | `/{id}` | Update a pet |
+| `PATCH` | `/{id}/status?status=PENDING` | Change pet status (validated transitions) |
+| `DELETE` | `/{id}` | Soft-delete a pet |
+| `GET` | `/by-organization/{orgId}?page=0&size=20` | List pets owned by an organization (via `pet_ownerships`) |
+
+### Mock Endpoints (9 controllers)
+
+Full Swagger documentation for planned features: Adoptions, Organizations, Users, Posts, Rescue Cases, Media, Roles, Tags, Pet Details (medical records, location, diary).
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **JDK 21+** (or use the Gradle wrapper which handles the toolchain)
+- **Docker** (for PostgreSQL)
+
+### Run Locally
+
+```bash
+# 1. Start PostgreSQL
+docker-compose up -d postgres
+
+# 2. Start the app
+./gradlew bootRun          # Linux/Mac
+gradlew.bat bootRun        # Windows
+
+# App starts on http://localhost:8080
+# Swagger UI: http://localhost:8080/swagger-ui.html
+```
+
+### Run with Docker (Full Stack)
+
+```bash
+docker-compose up -d       # Starts app + PostgreSQL
+docker-compose logs -f app # Follow logs
+docker-compose down -v     # Stop + remove volumes
+```
+
+### Run Tests
+
+```bash
+./gradlew test             # Uses H2 in-memory — no Docker needed
 ```
 
 ---
 
 ## Environment Profiles
 
-The app uses Spring profiles to switch databases:
-
 | Profile | Activated by | Database | Use case |
 |---------|-------------|----------|----------|
-| *(default)* | `./gradlew bootRun` | **Local PostgreSQL** (Docker) | Local dev |
-| `production` | `SPRING_PROFILES_ACTIVE=production` | **NeonDB** (cloud Postgres) | Deployment |
-
-### Profile config files
-
-- `application.properties` — base config + local Postgres defaults
-- `application-production.properties` — overrides datasource to NeonDB with SSL, tuned connection pool
+| *(default)* | `./gradlew bootRun` | Local PostgreSQL (Docker) | Local dev |
+| `production` | `SPRING_PROFILES_ACTIVE=production` | NeonDB (cloud Postgres) | Deployment |
 
 ---
 
 ## Docker
 
-### Architecture
+### Local Dev Architecture
 
 ```
-┌─ docker-compose.yml (LOCAL DEV) ─────────────────┐
-│                                                    │
-│  ┌──────────┐       ┌───────────────────┐         │
-│  │ Postgres │◄──────│  Spring Boot App  │         │
-│  │ :5432    │       │  :8080            │         │
-│  └──────────┘       └───────────────────┘         │
-└────────────────────────────────────────────────────┘
-
-┌─ docker-compose.prod.yml (DEPLOY) ───────────────┐
-│                                                    │
-│  ┌───────────────────┐       ┌──────────────────┐ │
-│  │  Spring Boot App  │──────►│  NeonDB (cloud)  │ │
-│  │  :8080            │       │  *.neon.tech     │ │
-│  └───────────────────┘       └──────────────────┘ │
-│                          NO Postgres container     │
-└────────────────────────────────────────────────────┘
+┌─ docker-compose.yml ─────────────────────┐
+│  ┌──────────┐       ┌─────────────────┐  │
+│  │ Postgres │◄──────│ Spring Boot App │  │
+│  │ :5432    │       │ :8080           │  │
+│  └──────────┘       └─────────────────┘  │
+└──────────────────────────────────────────┘
 ```
 
-### Dockerfile
+### Production Architecture
 
-Multi-stage build:
-1. **Builder** — uses `eclipse-temurin:21-jdk-alpine`, runs `gradlew bootJar`
-2. **Runtime** — uses `eclipse-temurin:21-jre-alpine`, runs as non-root user, includes health check
-
-### docker-compose.yml (local dev)
-
-Starts **both** the Spring Boot app and a PostgreSQL 16 container.
-The app container uses profile `development` and connects to the local Postgres.
-
-```bash
-docker-compose up -d          # start
-docker-compose logs -f app    # follow logs
-docker-compose down -v        # stop + remove volumes
+```
+┌─ docker-compose.prod.yml ────────────────┐
+│  ┌─────────────────┐     ┌────────────┐  │
+│  │ Spring Boot App │────►│ NeonDB     │  │
+│  │ :8080           │     │ (cloud)    │  │
+│  └─────────────────┘     └────────────┘  │
+│                    No Postgres container  │
+└──────────────────────────────────────────┘
 ```
 
-### docker-compose.prod.yml (deployment)
-
-Starts **only** the Spring Boot app. No Postgres container — connects to NeonDB via environment variables.
-
-```bash
-# Requires DB_* env vars pointing to NeonDB
-docker compose -f docker-compose.prod.yml up -d
-```
+**Dockerfile**: Multi-stage build — `eclipse-temurin:21-jdk-alpine` (builder) → `eclipse-temurin:21-jre-alpine` (runtime, non-root user, health check).
 
 ---
 
@@ -448,58 +432,229 @@ docker compose -f docker-compose.prod.yml up -d
 
 Two GitHub Actions workflows in `.github/workflows/`:
 
-### ci.yml — Continuous Integration
-
-- **Triggers**: Push to `main` or `develop`, PR to `main`
-- **Steps**: Checkout → Setup JDK 21 → `./gradlew build` (compile + test) → Upload test reports
-- Runs on every push/PR to catch broken builds early
-
-### deploy.yml — Build Image + Deploy
-
-- **Triggers**: Push to `main` only
-- **Jobs**:
-  1. **build** — Build & test with Gradle
-  2. **docker** — Build Docker image, push to GitHub Container Registry (GHCR)
-  3. **deploy** — SSH into production server, pull image, run `docker-compose.prod.yml`
-
-**Key point**: The deploy job uses `docker-compose.prod.yml` which has **no Postgres container** — it connects to NeonDB via secrets.
-
-### Required GitHub Secrets
-
-| Secret | Purpose |
-|--------|--------|
-| `DEPLOY_HOST` | Production server hostname/IP |
-| `DEPLOY_USER` | SSH user |
-| `DEPLOY_SSH_KEY` | SSH private key |
-| `DEPLOY_PATH` | Path to docker-compose.prod.yml on server |
-| `NEONDB_HOST` | e.g. `ep-cool-name-123456.us-east-2.aws.neon.tech` |
-| `NEONDB_PORT` | `5432` |
-| `NEONDB_NAME` | Database name |
-| `NEONDB_USERNAME` | NeonDB user |
-| `NEONDB_PASSWORD` | NeonDB password |
+| Workflow | Trigger | Steps |
+|----------|---------|-------|
+| **ci.yml** | Push to `main`/`develop`, PR to `main` | Checkout → JDK 21 → `./gradlew build` → Upload test reports |
+| **deploy.yml** | Push to `main` only | Build → Docker image → Push to GHCR → SSH deploy with `docker-compose.prod.yml` |
 
 ---
 
-## NeonDB Setup
+## Conventions
 
-1. Create a project at [neon.tech](https://neon.tech)
-2. Copy the connection details from the dashboard
-3. Set the `NEONDB_*` secrets in GitHub repo settings → Secrets and variables → Actions
-4. The `production` profile uses `?sslmode=require` (NeonDB requires SSL)
-5. Schema is auto-created by Hibernate `ddl-auto=update`
+- **URI pattern**: `/api/v1/**` — all responses wrapped in `ApiResponse<T>`
+- **`@Transactional`**: Only on domain services — never on adapters or controllers
+- **Mapping**: MapStruct for all conversions (domain ↔ JPA entity, domain → DTO)
+- **Soft delete**: `deleted`, `deletedAt`, `deletedBy` in `BaseEntity`
+- **Pagination**: Every GET list endpoint is paginated (`PageResponse<T>` envelope)
+- **Query ports return DTOs**: Not domain entities — keeps the query path free of domain coupling
+- **Organization data via JOIN**: Always included in pet queries — no separate enrichment step
 
 ---
 
-## How to Extend
+## Guide: How to Add a New CQRS Query Endpoint (Step by Step)
 
-1. **Add a new entity** (e.g., Shelter): Create `domain/entity/Shelter.java`, a domain repository interface, a domain service, then wire up application ports/use-cases, infrastructure JPA entity/adapter, and a presentation controller.
-2. **Add authentication**: Replace `SecurityConfig`'s permit-all with JWT filters. Add `JwtService`, `JwtAuthenticationFilter`, user entities, and update `SecurityConfig.PUBLIC_ENDPOINTS`.
-3. **Switch to PostgreSQL locally**: Run `docker-compose up -d` — it already includes Postgres.
-4. **Add a new business rule**: Put it in `PetDomainService` (or the relevant domain service). The domain layer is the single source of truth for business logic.
+This section walks through **exactly what was done** to implement `GET /api/v1/pets/by-organization/{organizationId}` — fetching paged pets by organization ID using the `pet_ownerships` join table. Use this as a recipe for adding any new query endpoint.
+
+### Context
+
+Pets are linked to organizations through a **`pet_ownerships` table** (not a direct FK). This table tracks ownership history:
+
+```sql
+CREATE TABLE pet_ownerships (
+    pet_id     UUID        NOT NULL REFERENCES pets (id),
+    owner_type VARCHAR(20),   -- 'USER' or 'ORGANIZATION'
+    owner_id   UUID,
+    from_time  TIMESTAMPTZ NOT NULL,
+    to_time    TIMESTAMPTZ,   -- NULL = current owner
+    PRIMARY KEY (pet_id, from_time)
+);
+```
+
+### Step 1: Domain Entity
+
+**File**: `domain/entity/PetOwnership.java`
+
+Create a pure Java domain entity (no Spring/JPA annotations — only Lombok):
+
+```java
+@Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PetOwnership {
+    private UUID petId;
+    private String ownerType;   // "USER" or "ORGANIZATION"
+    private UUID ownerId;
+    private LocalDateTime fromTime;
+    private LocalDateTime toTime;
+
+    public boolean isCurrent() {
+        return toTime == null;
+    }
+}
+```
+
+### Step 2: JPA Entity (Infrastructure)
+
+**Files**: `infrastructure/persistence/entity/PetOwnershipJpaEntity.java`, `PetOwnershipId.java`
+
+Map to the existing DB table. Since `pet_ownerships` has a **composite primary key** `(pet_id, from_time)`, we need an `@IdClass`:
+
+```java
+@Entity
+@Table(name = "pet_ownerships")
+@IdClass(PetOwnershipId.class)
+public class PetOwnershipJpaEntity {
+    @Id @Column(name = "pet_id")   private UUID petId;
+    @Id @Column(name = "from_time") private LocalDateTime fromTime;
+    @Column(name = "owner_type")    private String ownerType;
+    @Column(name = "owner_id")      private UUID ownerId;
+    @Column(name = "to_time")       private LocalDateTime toTime;
+}
+```
+
+```java
+public class PetOwnershipId implements Serializable {
+    private UUID petId;
+    private LocalDateTime fromTime;
+}
+```
+
+### Step 3: Query in JPA Repository
+
+**File**: `infrastructure/persistence/repository/PetQueryJpaRepository.java`
+
+Add a JPQL query that **joins through `pet_ownerships`** to find pets currently owned by an organization. We reuse the existing `PetSummaryProjection` — no new projection needed:
+
+```java
+@Query("""
+    SELECT p.id          AS id,
+           p.name        AS name,
+           p.species     AS species,
+           p.breed       AS breed,
+           p.age         AS age,
+           p.vaccinated  AS vaccinated,
+           p.gender      AS gender,
+           p.status      AS status,
+           p.healthStatus AS healthStatus,
+           o.organizationId AS organizationId,
+           o.name        AS organizationName,
+           o.type        AS organizationType,
+           o.status      AS organizationStatus
+    FROM PetOwnershipJpaEntity po
+    JOIN PetJpaEntity p ON po.petId = p.id
+    LEFT JOIN OrganizationJpaEntity o ON p.shelterId = o.organizationId
+    WHERE po.ownerId = :organizationId
+      AND po.ownerType = 'ORGANIZATION'
+      AND po.toTime IS NULL
+      AND p.deleted = false
+""")
+Page<PetSummaryProjection> findSummariesByOrganizationId(
+        @Param("organizationId") UUID organizationId,
+        Pageable pageable);
+```
+
+Key points:
+- `po.toTime IS NULL` → only current ownerships
+- `po.ownerType = 'ORGANIZATION'` → filter to org-type owners
+- `LEFT JOIN OrganizationJpaEntity` → still include org details in the projection
+- Reuses `PetSummaryProjection` — same columns, same mapping
+
+### Step 4: Output Port (Application Layer)
+
+**File**: `application/port/out/PetQueryDataPort.java`
+
+Add one method:
+
+```java
+Page<PetSummaryResponseDto> findSummariesByOrganizationId(UUID organizationId, Pageable pageable);
+```
+
+### Step 5: Adapter (Infrastructure → Maps Projection → DTO)
+
+**File**: `infrastructure/persistence/adapter/PetQueryAdapter.java`
+
+Implement the new port method. The `toSummaryDto()` mapping already exists — just reuse it:
+
+```java
+@Override
+public Page<PetSummaryResponseDto> findSummariesByOrganizationId(UUID organizationId, Pageable pageable) {
+    return queryRepo.findSummariesByOrganizationId(organizationId, pageable).map(this::toSummaryDto);
+}
+```
+
+### Step 6: Query Port + Use Case (Application Layer)
+
+**File**: `application/port/query/PetQueryPort.java`
+
+```java
+Page<PetSummaryResponseDto> findByOrganizationId(UUID organizationId, Pageable pageable);
+```
+
+**File**: `application/usecase/PetQueryUseCase.java`
+
+```java
+@Override
+public Page<PetSummaryResponseDto> findByOrganizationId(UUID organizationId, Pageable pageable) {
+    log.debug("Query: find pets by organization id {} (paginated)", organizationId);
+    return queryDataPort.findSummariesByOrganizationId(organizationId, pageable);
+}
+```
+
+### Step 7: Controller Endpoint
+
+**File**: `presentation/controller/PetController.java`
+
+```java
+@GetMapping("/by-organization/{organizationId}")
+@Operation(summary = "List pets owned by an organization (paginated, via pet_ownerships table)")
+public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getByOrganization(
+        @PathVariable UUID organizationId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+    return ResponseEntity.ok(ApiResponse.ok(
+            PageResponse.from(petQueryPort.findByOrganizationId(organizationId, PageRequest.of(page, size)))));
+}
+```
+
+### Summary: Files Changed
+
+| # | Layer | File | Action |
+|---|-------|------|--------|
+| 1 | Domain | `domain/entity/PetOwnership.java` | **Created** — pure Java entity |
+| 2 | Infrastructure | `persistence/entity/PetOwnershipJpaEntity.java` | **Created** — JPA entity with `@IdClass` |
+| 3 | Infrastructure | `persistence/entity/PetOwnershipId.java` | **Created** — composite PK class |
+| 4 | Infrastructure | `persistence/repository/PetQueryJpaRepository.java` | **Modified** — added JOIN query |
+| 5 | Application | `port/out/PetQueryDataPort.java` | **Modified** — added method |
+| 6 | Infrastructure | `persistence/adapter/PetQueryAdapter.java` | **Modified** — implemented method |
+| 7 | Application | `port/query/PetQueryPort.java` | **Modified** — added method |
+| 8 | Application | `usecase/PetQueryUseCase.java` | **Modified** — delegated to port |
+| 9 | Presentation | `controller/PetController.java` | **Modified** — added endpoint |
+
+### Data Flow
+
+```
+GET /api/v1/pets/by-organization/{orgId}?page=0&size=20
+    ↓
+PetController.getByOrganization()
+    ↓
+PetQueryPort.findByOrganizationId(orgId, pageable)
+    ↓
+PetQueryUseCase (passthrough)  
+    ↓
+PetQueryDataPort.findSummariesByOrganizationId(orgId, pageable)
+    ↓
+PetQueryAdapter → queryRepo.findSummariesByOrganizationId()
+    ↓
+JPQL: pet_ownerships JOIN pets LEFT JOIN organizations
+    ↓
+Page<PetSummaryProjection> → map(toSummaryDto) → Page<PetSummaryResponseDto>
+    ↓
+PageResponse.from(page) → ApiResponse.ok()
+```
 
 ---
 
 ## License
 
 This project is for educational purposes.
-

@@ -2,9 +2,10 @@ package com.uit.petrescueapi.application.usecase;
 
 import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
 import com.uit.petrescueapi.application.dto.pet.UpdatePetRequestDto;
-import com.uit.petrescueapi.application.port.in.command.PetCommandPort;
+import com.uit.petrescueapi.application.port.command.PetCommandPort;
 import com.uit.petrescueapi.domain.entity.Pet;
 import com.uit.petrescueapi.domain.service.PetDomainService;
+import com.uit.petrescueapi.domain.service.OrganizationDomainService;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +24,31 @@ import java.util.UUID;
 public class PetCommandUseCase implements PetCommandPort {
 
     private final PetDomainService domainService;
+    private final OrganizationDomainService organizationDomainService;
 
     @Override
-    public Pet create(CreatePetRequestDto cmd) {
-        log.debug("Command: create pet '{}'", cmd.getName());
-        Pet pet = Pet.builder()
+    public Pet createForUser(CreatePetRequestDto cmd, UUID userId) {
+        log.debug("Command: create pet '{}' for user {}", cmd.getName(), userId);
+        Pet pet = buildPetFromDto(cmd);
+        return domainService.createForUser(pet, userId);
+    }
+
+    @Override
+    public Pet createForShelter(CreatePetRequestDto cmd, UUID shelterId, UUID userId) {
+        log.debug("Command: create pet '{}' for shelter {} by user {}", cmd.getName(), shelterId, userId);
+        
+        // Validate membership in application layer
+        if (!organizationDomainService.isMember(shelterId, userId)) {
+            throw new com.uit.petrescueapi.domain.exception.ForbiddenException(
+                    String.format("User %s is not a member of organization %s", userId, shelterId));
+        }
+        
+        Pet pet = buildPetFromDto(cmd);
+        return domainService.createForShelter(pet, shelterId);
+    }
+
+    private Pet buildPetFromDto(CreatePetRequestDto cmd) {
+        return Pet.builder()
                 .name(cmd.getName())
                 .species(cmd.getSpecies())
                 .breed(cmd.getBreed())
@@ -41,9 +62,7 @@ public class PetCommandUseCase implements PetCommandPort {
                 .rescueDate(cmd.getRescueDate())
                 .rescueLocation(cmd.getRescueLocation())
                 .imageUrls(cmd.getImageUrls())
-                .shelterId(cmd.getShelterId())
                 .build();
-        return domainService.create(pet);
     }
 
     @Override

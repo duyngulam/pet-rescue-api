@@ -43,7 +43,9 @@ public class CreatePetRequestDto {
     @Size(max = 2000)
     private String description;
 
+
     private boolean vaccinated;
+
     private boolean neutered;
 
     @PastOrPresent

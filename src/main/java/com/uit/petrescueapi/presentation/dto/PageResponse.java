@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 
+import javax.naming.ldap.PagedResultsControl;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Paginated wrapper carried inside {@link ApiResponse#getData()}.
@@ -35,4 +38,26 @@ public class PageResponse<T> {
 
     @Schema(description = "Is this the last page?", example = "false")
     private boolean last;
+
+    public static <T,R>PageResponse<R> from (Page<T> page, Function<T,R> mapper){
+        return PageResponse.<R>builder().content(page.getContent().stream().map(mapper).toList())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
+    }
+
+    /** Convenience overload when the Page already contains the target DTO type. */
+    public static <T> PageResponse<T> from(Page<T> page) {
+        return PageResponse.<T>builder()
+                .content(page.getContent())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
+    }
 }

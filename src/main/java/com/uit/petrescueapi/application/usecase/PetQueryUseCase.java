@@ -1,55 +1,53 @@
 package com.uit.petrescueapi.application.usecase;
 
-import com.uit.petrescueapi.application.port.in.query.PetQueryPort;
-import com.uit.petrescueapi.domain.entity.Pet;
-import com.uit.petrescueapi.domain.service.PetDomainService;
+import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
+import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
+import com.uit.petrescueapi.application.port.out.PetQueryDataPort;
+import com.uit.petrescueapi.application.port.query.PetQueryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
  * Query (read) use-case for Pet operations.
- * Delegates read-only calls to {@link PetDomainService}.
+ *
+ * <p>Thin orchestrator: delegates directly to {@link PetQueryDataPort}
+ * (implemented by the infrastructure query adapter). No domain service
+ * involvement — queries bypass the domain layer entirely (CQRS).</p>
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PetQueryUseCase implements PetQueryPort {
 
-    private final PetDomainService domainService;
+    private final PetQueryDataPort queryDataPort;
 
     @Override
-    public Pet findById(UUID id) {
+    public PetResponseDto findById(UUID id) {
         log.debug("Query: find pet by id {}", id);
-        return domainService.findById(id);
+        return queryDataPort.findById(id);
     }
 
     @Override
-    public List<Pet> findAll() {
-        log.debug("Query: find all pets");
-        return domainService.findAll();
-    }
-
-    @Override
-    public Page<Pet> findAll(Pageable pageable) {
+    public Page<PetSummaryResponseDto> findAll(Pageable pageable) {
         log.debug("Query: find all pets (paginated)");
-        return domainService.findAll(pageable);
+
+        return queryDataPort.findAllSummaries(pageable);
     }
 
     @Override
-    public List<Pet> findAvailable() {
-        log.debug("Query: find available pets");
-        return domainService.findAvailable();
-    }
-
-    @Override
-    public Page<Pet> findAvailable(Pageable pageable) {
+    public Page<PetSummaryResponseDto> findAvailable(Pageable pageable) {
         log.debug("Query: find available pets (paginated)");
-        return domainService.findAvailable(pageable);
+        return queryDataPort.findAvailableSummaries(pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findByOrganizationId(UUID organizationId, Pageable pageable) {
+        log.debug("Query: find pets by organization id {} (paginated)", organizationId);
+        return queryDataPort.findSummariesByOrganizationId(organizationId, pageable);
     }
 }

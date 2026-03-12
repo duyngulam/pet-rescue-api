@@ -1,5 +1,7 @@
 package com.uit.petrescueapi.application.dto.pet;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
 import com.uit.petrescueapi.domain.valueobject.Gender;
 import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -43,6 +45,10 @@ public class PetSummaryResponseDto {
 
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID organizationId;
+    
+    /** Optional: included when ?includeOrganization=true */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private OrganizationSummaryResponseDto organization;
 
     @Schema(example = "TP Ho Chi Minh")
     private String province;

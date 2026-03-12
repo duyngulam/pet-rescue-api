@@ -1,4 +1,4 @@
-name: Deploy
+    name: Deploy
 
 on:
   push:
@@ -90,14 +90,29 @@ jobs:
 
             # Deploy with production compose (NO Postgres container)
             export IMAGE_TAG=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Database
             export DB_HOST=${{ secrets.NEONDB_HOST }}
             export DB_PORT=${{ secrets.NEONDB_PORT }}
             export DB_NAME=${{ secrets.NEONDB_NAME }}
             export DB_USERNAME=${{ secrets.NEONDB_USERNAME }}
             export DB_PASSWORD=${{ secrets.NEONDB_PASSWORD }}
 
+            # Security
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+            # Email verification
+            export EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+            export EMAIL_VERIFICATION_URL=${{ secrets.EMAIL_VERIFICATION_URL }}
+
+            # SMTP
+            export SPRING_MAIL_HOST=${{ secrets.SPRING_MAIL_HOST }}
+            export SPRING_MAIL_PORT=${{ secrets.SPRING_MAIL_PORT }}
+            export MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            export MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Wait and verify health
-            sleep 15
+            # Wait for JVM + Spring context + Flyway migration + NeonDB wake-up
+            sleep 60
             curl -f http://localhost:8080/actuator/health || echo "Health check failed"

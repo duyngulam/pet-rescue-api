@@ -1,7 +1,9 @@
 package com.uit.petrescueapi.domain.service;
 
 import com.uit.petrescueapi.domain.entity.Pet;
+import com.uit.petrescueapi.domain.entity.PetOwnership;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.repository.PetOwnershipRepository;
 import com.uit.petrescueapi.domain.repository.PetRepository;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.UUID;
  *
  * Key rules implemented here:
  *  • New pets always start with status AVAILABLE.
+ *  • Pet creation ATOMICALLY creates ownership record (when shelterId provided).
  *  • Status transitions are validated against an explicit allow-list.
  *  • Deletion is soft-delete (sets `deleted = true`).
  *
@@ -35,14 +38,15 @@ import java.util.UUID;
 public class PetDomainService {
 
     private final PetRepository petRepository;
+    private final PetOwnershipRepository ownershipRepository;
 
     // ── Status-transition matrix ───────────────────
     private static final Map<PetStatus, Set<PetStatus>> ALLOWED_TRANSITIONS = Map.of(
-            PetStatus.AVAILABLE,   Set.of(PetStatus.PENDING, PetStatus.FOSTERED, PetStatus.UNAVAILABLE),
-            PetStatus.PENDING,     Set.of(PetStatus.ADOPTED, PetStatus.AVAILABLE),
-            PetStatus.ADOPTED,     Set.of(PetStatus.AVAILABLE),
-            PetStatus.FOSTERED,    Set.of(PetStatus.AVAILABLE, PetStatus.PENDING, PetStatus.ADOPTED),
-            PetStatus.UNAVAILABLE, Set.of(PetStatus.AVAILABLE, PetStatus.FOSTERED)
+            PetStatus.UNOWNED,   Set.of(PetStatus.PENDING, PetStatus.FOSTERED, PetStatus.UNAVAILABLE),
+            PetStatus.PENDING,     Set.of(PetStatus.ADOPTED, PetStatus.UNOWNED),
+            PetStatus.ADOPTED,     Set.of(PetStatus.UNOWNED),
+            PetStatus.FOSTERED,    Set.of(PetStatus.UNOWNED, PetStatus.PENDING, PetStatus.ADOPTED),
+            PetStatus.UNAVAILABLE, Set.of(PetStatus.UNOWNED, PetStatus.FOSTERED)
     );
 
     // ── Queries ─────────────────────────────────────
@@ -65,22 +69,64 @@ public class PetDomainService {
 
     @Transactional(readOnly = true)
     public List<Pet> findAvailable() {
-        return petRepository.findByStatus(PetStatus.AVAILABLE);
+        return petRepository.findByStatus(PetStatus.UNOWNED);
     }
 
     @Transactional(readOnly = true)
     public Page<Pet> findAvailable(Pageable pageable) {
-        return petRepository.findByStatus(PetStatus.AVAILABLE, pageable);
+        return petRepository.findByStatus(PetStatus.UNOWNED, pageable);
     }
 
     // ── Commands ────────────────────────────────────
 
-    public Pet create(Pet pet) {
-        log.info("Creating pet: {}", pet.getName());
+    /**
+     * Create a pet for a regular user (USER role).
+     * Creates Pet + PetOwnership with ownerType=USER atomically.
+     */
+    public Pet createForUser(Pet pet, UUID userId) {
+        log.info("Creating pet '{}' for user {}", pet.getName(), userId);
         pet.setId(UUID.randomUUID());
-        pet.setStatus(PetStatus.AVAILABLE);
+        pet.setStatus(PetStatus.UNOWNED);
         pet.setCreatedAt(LocalDateTime.now());
-        return petRepository.save(pet);
+        Pet saved = petRepository.save(pet);
+
+        // Atomically create USER ownership
+        PetOwnership ownership = PetOwnership.builder()
+                .petId(saved.getId())
+                .ownerType("USER")
+                .ownerId(userId)
+                .fromTime(LocalDateTime.now())
+                .toTime(null)
+                .build();
+        ownershipRepository.save(ownership);
+        log.debug("Created ownership record: pet {} → user {}", saved.getId(), userId);
+
+        return saved;
+    }
+
+    /**
+     * Create a pet for a shelter/organization (MEMBER role).
+     * Creates Pet + PetOwnership with ownerType=ORGANIZATION atomically.
+     */
+    public Pet createForShelter(Pet pet, UUID shelterId) {
+        log.info("Creating pet '{}' for shelter {}", pet.getName(), shelterId);
+        pet.setId(UUID.randomUUID());
+        pet.setStatus(PetStatus.UNOWNED);
+        pet.setCreatedAt(LocalDateTime.now());
+        Pet saved = petRepository.save(pet);
+
+        // Atomically create ORGANIZATION ownership
+        PetOwnership ownership = PetOwnership.builder()
+                .petId(saved.getId())
+                .ownerType("ORGANIZATION")
+                .ownerId(shelterId)
+                .fromTime(LocalDateTime.now())
+                .toTime(null)
+                .build();
+        ownershipRepository.save(ownership);
+        log.debug("Created ownership record: pet {} → organization {}", saved.getId(), shelterId);
+
+        return saved;
     }
 
     public Pet update(UUID id, Pet updated) {

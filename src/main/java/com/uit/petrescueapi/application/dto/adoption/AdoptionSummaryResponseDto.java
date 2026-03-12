@@ -28,5 +28,11 @@ public class AdoptionSummaryResponseDto {
     @Schema(example = "PENDING", allowableValues = {"PENDING", "APPROVED", "REJECTED", "CANCELLED"})
     private String status;
 
+    @Schema(example = "i used to have a cat 2 years ago")
+    private String experience;
+
+    @Schema(example = "Apartment at Ha Noi, avg salary 2000$")
+    private String liveCondition;
+
     private LocalDateTime createdAt;
 }

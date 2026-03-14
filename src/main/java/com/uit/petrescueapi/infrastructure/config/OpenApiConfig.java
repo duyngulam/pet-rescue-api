@@ -15,6 +15,9 @@ import org.springframework.context.annotation.Configuration;
  *
  * <p>Adds a global "Bearer Authentication" security scheme so the
  * Swagger UI shows an "Authorize" button for JWT tokens.</p>
+ *
+ * <p>Server URL uses relative path so Swagger UI fetches from the
+ * same host it's currently served from (works in dev, test, production).</p>
  */
 @Configuration
 @OpenAPIDefinition(
@@ -24,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
                 description = "RESTful API for Pet Rescue and Adoption Platform",
                 contact = @Contact(name = "Pet Rescue Team", email = "support@petrescue.com")
         ),
-        servers = @Server(url = "http://localhost:8080", description = "Local dev"),
+        servers = @Server(url = "/", description = "Current server"),
         security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(

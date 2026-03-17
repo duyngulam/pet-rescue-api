@@ -14,5 +14,5 @@ import java.util.UUID;
 public class AddMemberRequestDto {
 
     private UUID userId;
-    private String role;  // OWNER | MANAGER | MEMBER | VOLUNTEER
+    private String role;  // STAFF | VET (org endpoint); OWNER | STAFF | VET (admin endpoint)
 }

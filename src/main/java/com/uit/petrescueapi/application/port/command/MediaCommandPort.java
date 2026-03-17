@@ -1,16 +1,10 @@
 package com.uit.petrescueapi.application.port.command;
 
-import com.uit.petrescueapi.application.dto.media.MediaFileResponseDto;
+import com.uit.petrescueapi.domain.entity.MediaFile;
 
 import java.util.UUID;
 
-/**
- * Command (write) port for Media operations.
- * Handles file upload and deletion.
- */
 public interface MediaCommandPort {
-
-    MediaFileResponseDto upload(/* MultipartFile in real impl */);
-
+    MediaFile register(UUID uploaderId, String publicId, String resourceType, String format, Integer width, Integer height, Integer bytes, String folder);
     void delete(UUID mediaId);
 }

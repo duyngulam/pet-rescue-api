@@ -1,6 +1,5 @@
 package com.uit.petrescueapi.domain.entity;
 
-import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -8,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * BaseEntity — common audit fields for domain entities.
@@ -21,20 +21,19 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@MappedSuperclass
 public abstract class BaseEntity {
 
     protected LocalDateTime createdAt;
 
-    protected String createdBy;
+    protected UUID createdBy;
 
     protected LocalDateTime updatedAt;
 
-    protected String updatedBy;
+    protected UUID updatedBy;
 
     protected boolean deleted;
 
     protected LocalDateTime deletedAt;
 
-    protected String deletedBy;
+    protected UUID deletedBy;
 }

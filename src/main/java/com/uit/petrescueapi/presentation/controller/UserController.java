@@ -1,0 +1,69 @@
+package com.uit.petrescueapi.presentation.controller;
+
+import com.uit.petrescueapi.application.dto.user.UserReputationResponseDto;
+import com.uit.petrescueapi.application.dto.user.UserResponseDto;
+import com.uit.petrescueapi.application.dto.user.UserSummaryResponseDto;
+import com.uit.petrescueapi.application.port.command.UserCommandPort;
+import com.uit.petrescueapi.application.port.query.UserQueryPort;
+import com.uit.petrescueapi.presentation.dto.ApiResponse;
+import com.uit.petrescueapi.presentation.dto.PageResponse;
+import com.uit.petrescueapi.presentation.mapper.UserWebMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+@Slf4j
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Users", description = "User management")
+public class UserController {
+
+    private final UserCommandPort commandPort;
+    private final UserQueryPort queryPort;
+    private final UserWebMapper mapper;
+
+    @PatchMapping("/me/profile")
+    @Operation(summary = "Update current user profile")
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateProfile(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String avatarUrl,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.updateProfile(userId, username, avatarUrl))));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current user info")
+    public ResponseEntity<ApiResponse<UserResponseDto>> getCurrentUser(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.findById(userId)));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID")
+    public ResponseEntity<ApiResponse<UserResponseDto>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.findById(id)));
+    }
+
+    @GetMapping
+    @Operation(summary = "List all users")
+    public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponseDto>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/{id}/reputation")
+    @Operation(summary = "Get user reputation")
+    public ResponseEntity<ApiResponse<UserReputationResponseDto>> getReputation(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.getReputation(id)));
+    }
+}

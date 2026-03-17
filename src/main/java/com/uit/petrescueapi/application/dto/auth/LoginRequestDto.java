@@ -15,10 +15,9 @@ import lombok.*;
 @Schema(description = "Login request")
 public class LoginRequestDto {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be valid")
-    @Schema(example = "john@example.com")
-    private String email;
+    @NotBlank(message = "Email or username is required")
+    @Schema(example = "john@example.com", description = "Email or username")
+    private String emailOrUsername;
 
     @NotBlank(message = "Password is required")
     @Schema(example = "P@ssw0rd123")

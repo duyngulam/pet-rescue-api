@@ -6,6 +6,7 @@ import com.uit.petrescueapi.application.port.command.OrganizationCommandPort;
 import com.uit.petrescueapi.domain.entity.Organization;
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
 import com.uit.petrescueapi.domain.service.OrganizationDomainService;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,13 +31,14 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
         Organization org = Organization.builder()
                 .name(cmd.getName())
                 .type(cmd.getType())
-                .street_address(cmd.getStreet_address())
-                .ward_code(cmd.getWard_code())
-                .ward_name(cmd.getWard_name())
-                .province_code(cmd.getProvince_code())
-                .province_name(cmd.getProvince_name())
+                .streetAddress(cmd.getStreetAddress())
+                .wardCode(cmd.getWardCode())
+                .wardName(cmd.getWardName())
+                .provinceCode(cmd.getProvinceCode())
+                .provinceName(cmd.getProvinceName())
                 .phone(cmd.getPhone())
                 .email(cmd.getEmail())
+                .officialLink(cmd.getOfficialLink())
                 .latitude(cmd.getLatitude())
                 .longitude(cmd.getLongitude())
                 .build();
@@ -49,9 +51,14 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
         Organization patch = Organization.builder()
                 .name(cmd.getName())
                 .type(cmd.getType())
-                .street_address(cmd.getStreet_address())
+                .streetAddress(cmd.getStreetAddress())
+                .wardCode(cmd.getWardCode())
+                .wardName(cmd.getWardName())
+                .provinceCode(cmd.getProvinceCode())
+                .provinceName(cmd.getProvinceName())
                 .phone(cmd.getPhone())
                 .email(cmd.getEmail())
+                .officialLink(cmd.getOfficialLink())
                 .latitude(cmd.getLatitude())
                 .longitude(cmd.getLongitude())
                 .build();
@@ -62,6 +69,12 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
     public void deactivate(UUID id) {
         log.debug("Command: deactivate organization {}", id);
         domainService.deactivate(id);
+    }
+
+    @Override
+    public Organization changeStatus(UUID id, OrganizationStatus newStatus) {
+        log.debug("Command: change organization {} status to {}", id, newStatus);
+        return domainService.changeStatus(id, newStatus);
     }
 
     @Override

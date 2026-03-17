@@ -1,0 +1,39 @@
+package com.uit.petrescueapi.application.usecase;
+
+import com.uit.petrescueapi.application.port.command.UserCommandPort;
+import com.uit.petrescueapi.domain.entity.User;
+import com.uit.petrescueapi.domain.repository.UserRepository;
+import com.uit.petrescueapi.domain.service.UserDomainService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+
+/**
+ * Command (write) use-case for User operations.
+ * Translates parameters into domain calls and delegates business rules
+ * to {@link UserDomainService}.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class UserCommandUseCase implements UserCommandPort {
+
+    private final UserDomainService domainService;
+    private final UserRepository userRepository;
+
+    @Override
+    public User updateProfile(UUID userId, String username, String avatarUrl) {
+        log.debug("Command: update profile for user {}", userId);
+        return domainService.updateProfile(userId, username, avatarUrl);
+    }
+
+    @Override
+    public void deactivate(UUID userId) {
+        log.debug("Command: deactivate user {}", userId);
+        User user = domainService.findById(userId);
+        user.deactivate();
+        userRepository.save(user);
+    }
+}

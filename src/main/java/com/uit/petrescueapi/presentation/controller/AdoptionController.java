@@ -1,0 +1,83 @@
+package com.uit.petrescueapi.presentation.controller;
+
+import com.uit.petrescueapi.application.dto.adoption.*;
+import com.uit.petrescueapi.application.port.command.AdoptionCommandPort;
+import com.uit.petrescueapi.application.port.query.AdoptionQueryPort;
+import com.uit.petrescueapi.presentation.dto.ApiResponse;
+import com.uit.petrescueapi.presentation.dto.PageResponse;
+import com.uit.petrescueapi.presentation.mapper.AdoptionWebMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/adoptions")
+@RequiredArgsConstructor
+@Slf4j
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Adoptions", description = "Adoption application management")
+public class AdoptionController {
+
+    private final AdoptionCommandPort commandPort;
+    private final AdoptionQueryPort queryPort;
+    private final AdoptionWebMapper mapper;
+
+    @PostMapping
+    @Operation(summary = "Submit an adoption application")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> submit(
+            @Valid @RequestBody CreateAdoptionRequestDto cmd,
+            Authentication authentication) {
+        UUID applicantId = UUID.fromString(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(mapper.toDto(commandPort.submit(cmd, applicantId))));
+    }
+
+    @PatchMapping("/{id}/approve")
+    @Operation(summary = "Approve an adoption application")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> approve(
+            @PathVariable UUID id,
+            @Valid @RequestBody DecisionRequestDto decision,
+            Authentication authentication) {
+        UUID decidedBy = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.approve(id, decision, decidedBy))));
+    }
+
+    @PatchMapping("/{id}/reject")
+    @Operation(summary = "Reject an adoption application")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> reject(
+            @PathVariable UUID id,
+            @Valid @RequestBody DecisionRequestDto decision,
+            Authentication authentication) {
+        UUID decidedBy = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.reject(id, decision, decidedBy))));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    @Operation(summary = "Cancel an adoption application")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> cancel(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.cancel(id))));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get adoption application by ID")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.findById(id)));
+    }
+
+    @GetMapping
+    @Operation(summary = "List all adoption applications")
+    public ResponseEntity<ApiResponse<PageResponse<AdoptionSummaryResponseDto>>> getAll(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findAll(status, PageRequest.of(page, size)))));
+    }
+}

@@ -2,6 +2,7 @@ package com.uit.petrescueapi.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -11,14 +12,14 @@ import java.util.UUID;
  * Composite primary key: (organization_id, user_id).
  */
 @Entity
-@Table(name = "organization_members")
+@Table(name = "organization_members", indexes = {@Index(name = "idx_org_member_user",columnList = "user_id")})
 @IdClass(OrganizationMemberId.class)
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrganizationMemberJpaEntity {
+public class OrganizationMemberJpaEntity extends BaseJpaEntity {
 
     @Id
     @Column(name = "organization_id", nullable = false)

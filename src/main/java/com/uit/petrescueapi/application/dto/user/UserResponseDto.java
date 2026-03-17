@@ -35,6 +35,30 @@ public class UserResponseDto {
     @Schema(example = "john@example.com")
     private String email;
 
+    @Schema(example = "John Doe")
+    private String fullName;
+
+    @Schema(example = "+84912345678")
+    private String phone;
+
+    @Schema(example = "MALE", allowableValues = {"MALE", "FEMALE", "OTHER"})
+    private String gender;
+
+    @Schema(example = "123 Nguyen Trai Street")
+    private String streetAddress;
+
+    @Schema(example = "00001")
+    private String wardCode;
+
+    @Schema(example = "Ward 1")
+    private String wardName;
+
+    @Schema(example = "79")
+    private String provinceCode;
+
+    @Schema(example = "Ho Chi Minh City")
+    private String provinceName;
+
     @Schema(example = "ACTIVE", allowableValues = {"PENDING_VERIFICATION", "ACTIVE", "INACTIVE", "BANNED"})
     private String status;
 

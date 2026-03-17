@@ -30,4 +30,28 @@ public class RegisterRequestDto {
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     @Schema(example = "P@ssw0rd123")
     private String password;
+
+    @Schema(example = "John Doe")
+    private String fullName;
+
+    @Schema(example = "+84912345678")
+    private String phone;
+
+    @Schema(example = "MALE", allowableValues = {"MALE", "FEMALE", "OTHER"})
+    private String gender;
+
+    @Schema(example = "123 Nguyen Trai Street")
+    private String streetAddress;
+
+    @Schema(example = "00001")
+    private String wardCode;
+
+    @Schema(example = "Ward 1")
+    private String wardName;
+
+    @Schema(example = "79")
+    private String provinceCode;
+
+    @Schema(example = "Ho Chi Minh City")
+    private String provinceName;
 }

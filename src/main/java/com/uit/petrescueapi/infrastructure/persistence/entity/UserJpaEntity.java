@@ -3,8 +3,8 @@ package com.uit.petrescueapi.infrastructure.persistence.entity;
 import com.uit.petrescueapi.domain.valueobject.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,10 +19,10 @@ import java.util.UUID;
 })
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserJpaEntity {
+public class UserJpaEntity extends BaseJpaEntity {
 
     @Id
     @Column(name = "user_id", updatable = false, nullable = false)
@@ -37,8 +37,32 @@ public class UserJpaEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "full_name", length = 255)
+    private String fullName;
+
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
+
+    @Column(name = "phone", length = 50)
+    private String phone;
+
+    @Column(name = "gender", length = 20)
+    private String gender;
+
+    @Column(name = "street_address", columnDefinition = "TEXT")
+    private String streetAddress;
+
+    @Column(name = "ward_code", length = 20)
+    private String wardCode;
+
+    @Column(name = "ward_name", length = 255)
+    private String wardName;
+
+    @Column(name = "province_code", length = 20)
+    private String provinceCode;
+
+    @Column(name = "province_name", length = 255)
+    private String provinceName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
@@ -47,7 +71,7 @@ public class UserJpaEntity {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -55,37 +79,4 @@ public class UserJpaEntity {
     )
     @Builder.Default
     private Set<RoleJpaEntity> roles = new HashSet<>();
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", updatable = false)
-    private UUID createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @Column(name = "is_deleted", nullable = false)
-    @Builder.Default
-    private boolean deleted = false;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
-
-    @PrePersist
-    void prePersist() {
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (updatedAt == null) updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

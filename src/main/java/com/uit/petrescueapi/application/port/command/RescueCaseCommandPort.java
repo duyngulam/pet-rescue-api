@@ -1,20 +1,13 @@
 package com.uit.petrescueapi.application.port.command;
 
 import com.uit.petrescueapi.application.dto.rescue.CreateRescueCaseRequestDto;
-import com.uit.petrescueapi.application.dto.rescue.RescueCaseResponseDto;
 import com.uit.petrescueapi.application.dto.rescue.UpdateRescueCaseStatusRequestDto;
+import com.uit.petrescueapi.domain.entity.RescueCase;
 
 import java.util.UUID;
 
-/**
- * Command (write) port for Rescue Case operations.
- * Handles case reporting, updates and status transitions.
- */
 public interface RescueCaseCommandPort {
-
-    RescueCaseResponseDto report(CreateRescueCaseRequestDto cmd);
-
-    RescueCaseResponseDto update(UUID caseId, CreateRescueCaseRequestDto cmd);
-
-    RescueCaseResponseDto changeStatus(UUID caseId, UpdateRescueCaseStatusRequestDto cmd);
+    RescueCase report(CreateRescueCaseRequestDto cmd, UUID reporterId);
+    RescueCase update(UUID caseId, CreateRescueCaseRequestDto cmd);
+    RescueCase changeStatus(UUID caseId, UpdateRescueCaseStatusRequestDto cmd);
 }

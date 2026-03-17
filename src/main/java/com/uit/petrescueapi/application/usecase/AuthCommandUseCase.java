@@ -58,7 +58,17 @@ public class AuthCommandUseCase implements AuthCommandPort {
         String hashedPassword = passwordEncoder.encode(cmd.getPassword());
 
         User user = authDomainService.registerUser(
-                cmd.getUsername(), cmd.getEmail(), hashedPassword);
+                cmd.getUsername(),
+                cmd.getEmail(),
+                hashedPassword,
+                cmd.getFullName(),
+                cmd.getPhone(),
+                cmd.getGender(),
+                cmd.getStreetAddress(),
+                cmd.getWardCode(),
+                cmd.getWardName(),
+                cmd.getProvinceCode(),
+                cmd.getProvinceName());
 
         // Create and send verification token
         EmailVerificationToken verificationToken =
@@ -73,10 +83,10 @@ public class AuthCommandUseCase implements AuthCommandPort {
 
     @Override
     public AuthTokenResponseDto login(LoginRequestDto cmd) {
-        User user = authDomainService.findByEmail(cmd.getEmail());
+        User user = authDomainService.findByEmailOrUsername(cmd.getEmailOrUsername());
 
         if (!passwordEncoder.matches(cmd.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid email or password");
+            throw new UnauthorizedException("Invalid credentials");
         }
 
         if (user.getStatus() == UserStatus.BANNED) {
@@ -200,6 +210,14 @@ public class AuthCommandUseCase implements AuthCommandPort {
                 .organizationRole(organizationRole)
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .gender(user.getGender())
+                .streetAddress(user.getStreetAddress())
+                .wardCode(user.getWardCode())
+                .wardName(user.getWardName())
+                .provinceCode(user.getProvinceCode())
+                .provinceName(user.getProvinceName())
                 .status(user.getStatus().name())
                 .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream().map(r -> r.getCode()).toList())

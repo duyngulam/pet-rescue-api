@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -54,7 +55,10 @@ public class AuthDomainService {
      * Create a new user entity with the default USER role.
      * The password is expected to be pre-hashed by the caller.
      */
-    public User registerUser(String username, String email, String hashedPassword) {
+    public User registerUser(String username, String email, String hashedPassword,
+                              String fullName, String phone, String gender,
+                              String streetAddress, String wardCode, String wardName,
+                              String provinceCode, String provinceName) {
         if (userRepository.existsByEmail(email)) {
             throw new ResourceAlreadyExistsException("User", "email", email);
         }
@@ -70,6 +74,14 @@ public class AuthDomainService {
                 .username(username)
                 .email(email)
                 .passwordHash(hashedPassword)
+                .fullName(fullName)
+                .phone(phone)
+                .gender(gender)
+                .streetAddress(streetAddress)
+                .wardCode(wardCode)
+                .wardName(wardName)
+                .provinceCode(provinceCode)
+                .provinceName(provinceName)
                 .status(UserStatus.PENDING_VERIFICATION)
                 .emailVerified(false)
                 .roles(Set.of(defaultRole))
@@ -182,5 +194,17 @@ public class AuthDomainService {
     public User findById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+    }
+
+    @Transactional(readOnly = true)
+    public User findByEmailOrUsername(String emailOrUsername) {
+        // Try email first
+        Optional<User> byEmail = userRepository.findByEmail(emailOrUsername);
+        if (byEmail.isPresent()) {
+            return byEmail.get();
+        }
+        // Try username
+        return userRepository.findByUsername(emailOrUsername)
+                .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
     }
 }

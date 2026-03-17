@@ -19,25 +19,28 @@ public class CreateOrganizationRequestDto {
     private String type;
 
     @Schema(example = "123 Nguyen Trai")
-    private String street_address;
+    private String streetAddress;
 
     @Schema(example = "00001")
-    private String ward_code;
+    private String wardCode;
 
     @Schema(example = "Phuong 1")
-    private String ward_name;
+    private String wardName;
 
     @Schema(example = "79")
-    private String province_code;
+    private String provinceCode;
 
     @Schema(example = "Ho Chi Minh")
-    private String province_name;
+    private String provinceName;
 
     @Schema(example = "+84-28-1234-5678")
     private String phone;
 
     @Schema(example = "contact@shelter.vn")
     private String email;
+
+    @Schema(example = "https://facebook.com/happypaws")
+    private String officialLink;
 
     @Schema(example = "10.762622")
     private Double latitude;

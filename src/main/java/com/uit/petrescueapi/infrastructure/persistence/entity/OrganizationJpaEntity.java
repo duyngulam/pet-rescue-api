@@ -1,14 +1,11 @@
 package com.uit.petrescueapi.infrastructure.persistence.entity;
 
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
+import org.locationtech.jts.geom.Point;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -16,14 +13,12 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "organizations")
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class
-OrganizationJpaEntity {
+public class OrganizationJpaEntity extends BaseJpaEntity {
 
     @Id
     @Column(name = "organization_id", updatable = false, nullable = false)
@@ -56,37 +51,13 @@ OrganizationJpaEntity {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "latitude")
-    private Double latitude;
+    @Column(name = "official_link", columnDefinition = "TEXT")
+    private String officialLink;
 
-    @Column(name = "longitude")
-    private Double longitude;
+    @Column(name = "location", columnDefinition = "geometry(Point,4326)")
+    private Point location;
 
-    @Column(name = "status", length = 50)
-    private String status; // ACTIVE | INACTIVE | PENDING
-
-    @CreatedDate
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @CreatedBy
-    @Column(name = "created_by")
-    private UUID createdBy;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @Column(name = "is_deleted", nullable = false)
-    private boolean deleted;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 50, nullable = false)
+    private OrganizationStatus status; // PENDING | ACTIVE | INACTIVE
 }

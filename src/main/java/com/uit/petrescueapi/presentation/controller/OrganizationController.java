@@ -3,6 +3,10 @@ package com.uit.petrescueapi.presentation.controller;
 import com.uit.petrescueapi.application.dto.organization.*;
 import com.uit.petrescueapi.application.port.command.OrganizationCommandPort;
 import com.uit.petrescueapi.application.port.query.OrganizationQueryPort;
+import com.uit.petrescueapi.domain.exception.BusinessException;
+import com.uit.petrescueapi.domain.service.OrganizationDomainService;
+import com.uit.petrescueapi.domain.service.UserDomainService;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
 import com.uit.petrescueapi.presentation.dto.PageResponse;
 import com.uit.petrescueapi.presentation.mapper.OrganizationWebMapper;
@@ -13,18 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
 import java.util.UUID;
 
-/**
- * REST controller for Organization endpoints.
- *
- * <p>Write operations use the command port ({@link OrganizationCommandPort}) which returns
- * domain entities — mapped to DTOs here via {@link OrganizationWebMapper}.</p>
- * <p>Read operations use the query port ({@link OrganizationQueryPort}) which returns DTOs
- * directly from JOIN projections (no domain entity involved — pure CQRS read side).</p>
- */
 @RestController
 @RequestMapping("/api/v1/organizations")
 @RequiredArgsConstructor
@@ -32,9 +31,13 @@ import java.util.UUID;
 @Tag(name = "Organizations", description = "Organization CRUD and membership management")
 public class OrganizationController {
 
+    private static final Set<String> ORG_ASSIGNABLE_ROLES = Set.of("STAFF", "VET");
+
     private final OrganizationCommandPort commandPort;
     private final OrganizationQueryPort queryPort;
     private final OrganizationWebMapper mapper;
+    private final OrganizationDomainService orgDomainService;
+    private final UserDomainService userDomainService;
 
     // ── Commands (write) ─────────────────────────
 
@@ -54,6 +57,14 @@ public class OrganizationController {
         return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.update(id, cmd))));
     }
 
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Change organization status (ACTIVE | INACTIVE | PENDING)")
+    public ResponseEntity<ApiResponse<OrganizationResponseDto>> changeStatus(
+            @PathVariable UUID id,
+            @RequestParam OrganizationStatus status) {
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.changeStatus(id, status))));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate an organization (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deactivate(@PathVariable UUID id) {
@@ -62,10 +73,30 @@ public class OrganizationController {
     }
 
     @PostMapping("/{id}/members")
-    @Operation(summary = "Add a member to an organization")
+    @Operation(summary = "Add STAFF or VET to this organization (OWNER only)")
     public ResponseEntity<ApiResponse<OrganizationMemberResponseDto>> addMember(
             @PathVariable UUID id,
-            @RequestBody AddMemberRequestDto cmd) {
+            @RequestBody AddMemberRequestDto cmd,
+            Authentication authentication) {
+
+        // Verify caller is OWNER of this org
+        UUID callerId = UUID.fromString(authentication.getName());
+        String callerRole = orgDomainService.getMemberRole(id, callerId)
+                .orElseThrow(() -> new AccessDeniedException("You are not a member of this organization"));
+        if (!"OWNER".equals(callerRole)) {
+            throw new AccessDeniedException("Only the organization OWNER can add members");
+        }
+
+        // Only STAFF or VET may be assigned via this endpoint
+        if (!ORG_ASSIGNABLE_ROLES.contains(cmd.getRole())) {
+            throw new BusinessException("Organization can only assign STAFF or VET roles", "INVALID_ORG_ROLE");
+        }
+
+        // Target user must not be an admin account
+        if (userDomainService.findById(cmd.getUserId()).hasRole("ADMIN")) {
+            throw new BusinessException("Cannot assign organization membership to an admin account", "FORBIDDEN_TARGET");
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(mapper.toMemberDto(commandPort.addMember(id, cmd))));
     }
@@ -106,4 +137,3 @@ public class OrganizationController {
                 PageResponse.from(queryPort.findMembers(id, PageRequest.of(page, size)))));
     }
 }
-

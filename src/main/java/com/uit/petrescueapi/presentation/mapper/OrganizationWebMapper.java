@@ -4,6 +4,7 @@ import com.uit.petrescueapi.application.dto.organization.OrganizationMemberRespo
 import com.uit.petrescueapi.application.dto.organization.OrganizationResponseDto;
 import com.uit.petrescueapi.domain.entity.Organization;
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -21,12 +22,23 @@ public interface OrganizationWebMapper {
     /**
      * Maps domain Organization → response DTO.
      * {@code street_address} is exposed as {@code address} in the response for brevity.
+     * {@code status} (enum) is converted to string for the DTO response.
+     * Audit fields are set by AuditingEntityListener, not mapped here.
      */
-    @Mapping(target = "address", source = "street_address")
+    @Mapping(target = "address", source = "streetAddress")
     @Mapping(target = "officialLink", source = "officialLink")
+    @Mapping(target = "status", source = "status")
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     OrganizationResponseDto toDto(Organization organization);
+
+    /**
+     * Convert OrganizationStatus enum to string for API response.
+     */
+    default String map(OrganizationStatus value) {
+        if (value == null) return null;
+        return value.name();
+    }
 
     /**
      * Maps domain OrganizationMember → response DTO.

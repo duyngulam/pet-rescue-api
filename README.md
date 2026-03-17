@@ -451,6 +451,114 @@ Two GitHub Actions workflows in `.github/workflows/`:
 
 ---
 
+## CQRS Best Practices & Architecture Rules
+
+### The Golden Rule: Controllers MUST Use Ports, Not Domain Services
+
+**✅ Correct Pattern** (all production controllers follow this):
+```java
+@RestController
+@RequiredArgsConstructor
+public class PetController {
+    private final PetCommandPort commandPort;  // Write operations
+    private final PetQueryPort queryPort;      // Read operations
+    private final PetWebMapper mapper;         // Domain → DTO (command path only)
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<PetResponseDto>> create(@RequestBody CreatePetRequestDto cmd) {
+        // CommandPort returns domain entity → map to DTO in controller
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.create(cmd))));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PetResponseDto>> getById(@PathVariable UUID id) {
+        // QueryPort returns DTO directly (no mapping needed)
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.findById(id)));
+    }
+}
+```
+
+**❌ Incorrect Pattern** (violates Clean Architecture):
+```java
+@RestController
+@RequiredArgsConstructor
+public class BadController {
+    private final PetDomainService domainService;  // ❌ Controllers must NOT inject domain services
+
+    @PostMapping
+    public ResponseEntity<Pet> create(@RequestBody CreatePetRequestDto cmd) {
+        return ResponseEntity.ok(domainService.create(cmd));  // ❌ Exposes domain entity directly
+    }
+}
+```
+
+### Why This Matters
+
+1. **Dependency Inversion** — Controllers depend on abstractions (ports), not implementations (domain services)
+2. **Testability** — Mock the port interface, not the concrete service
+3. **Flexibility** — Swap implementations without changing controllers
+4. **Separation of Concerns** — Controllers orchestrate HTTP; domain services enforce business rules
+
+### Command Path vs Query Path
+
+| Aspect | Command Path (Writes) | Query Path (Reads) |
+|--------|----------------------|-------------------|
+| **Port returns** | Domain entity | DTO directly |
+| **Validation** | Bean Validation + domain rules | None (read-only) |
+| **Transaction** | `@Transactional` on domain service | `@Transactional(readOnly = true)` on query adapter |
+| **Mapping** | Controller maps entity → DTO via web mapper | Adapter maps projection → DTO |
+| **Passes through domain** | ✅ Yes (business rules enforced) | ❌ No (bypasses domain for performance) |
+
+### When CQRS Exceptions Are Acceptable
+
+**Two controllers intentionally bypass CQRS** for valid architectural reasons:
+
+#### 1. `DevController` (Development Utility)
+```java
+@Profile("dev")  // Only active in development
+@RestController
+public class DevController {
+    private final UserDomainService userDomainService;  // ✅ Acceptable here
+
+    @PostMapping("/create-account")
+    public ResponseEntity<ApiResponse<UserResponseDto>> createAccount(@RequestBody CreateAdminRequest req) {
+        // Directly creates users with pre-verified email (bypasses normal registration)
+        User saved = userDomainService.createUser(req.username, req.email, hashedPassword, req.role);
+        return ResponseEntity.ok(ApiResponse.ok(mapToDto(saved)));
+    }
+}
+```
+
+**Why it's OK:** Dev endpoints are operational tools for bootstrapping (creating admins, seeding data). They're never deployed to production and don't represent domain use cases.
+
+#### 2. `AdminController` (Privileged Operations)
+```java
+@PreAuthorize("hasRole('ADMIN')")
+@RestController
+public class AdminController {
+    private final UserDomainService userDomainService;              // ✅ Acceptable for admin ops
+    private final OrganizationDomainService organizationDomainService;  // ✅ Acceptable for admin ops
+
+    @PostMapping("/organizations/{orgId}/accounts")
+    public ResponseEntity<ApiResponse<UserResponseDto>> createOrganizationAccount(...) {
+        // Creates user with pre-verified email (bypasses normal registration flow)
+        User user = userDomainService.createUser(username, email, hashedPassword, systemRole);
+        // Force-assigns org role (bypasses normal membership request flow)
+        organizationDomainService.addMember(organizationId, user.getId(), orgRole);
+        return ResponseEntity.ok(ApiResponse.ok(mapToDto(user)));
+    }
+}
+```
+
+**Why it's OK:** Admin operations are **privileged/tactical** — they bypass normal business flows by design (e.g., force-create users, override permissions). These are maintenance operations, not domain use cases.
+
+### General Guideline
+
+- **Production domain controllers** (Pet, Auth, Organization, Adoption, Post, etc.) → **MUST use CQRS ports**
+- **Operational controllers** (Dev, Admin) → **MAY directly use domain services** if the operation is truly outside normal business flows
+
+---
+
 ## Guide: How to Add a New CQRS Query Endpoint (Step by Step)
 
 This section walks through **exactly what was done** to implement `GET /api/v1/pets/by-organization/{organizationId}` — fetching paged pets by organization ID using the `pet_ownerships` join table. Use this as a recipe for adding any new query endpoint.

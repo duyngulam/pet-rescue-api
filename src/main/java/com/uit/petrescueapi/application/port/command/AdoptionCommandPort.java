@@ -1,22 +1,14 @@
 package com.uit.petrescueapi.application.port.command;
 
-import com.uit.petrescueapi.application.dto.adoption.AdoptionResponseDto;
 import com.uit.petrescueapi.application.dto.adoption.CreateAdoptionRequestDto;
 import com.uit.petrescueapi.application.dto.adoption.DecisionRequestDto;
+import com.uit.petrescueapi.domain.entity.AdoptionApplication;
 
 import java.util.UUID;
 
-/**
- * Command (write) port for Adoption operations.
- * Handles application submission, approval, rejection and cancellation.
- */
 public interface AdoptionCommandPort {
-
-    AdoptionResponseDto submit(CreateAdoptionRequestDto cmd);
-
-    AdoptionResponseDto approve(UUID applicationId, DecisionRequestDto decision);
-
-    AdoptionResponseDto reject(UUID applicationId, DecisionRequestDto decision);
-
-    AdoptionResponseDto cancel(UUID applicationId);
+    AdoptionApplication submit(CreateAdoptionRequestDto cmd, UUID applicantId);
+    AdoptionApplication approve(UUID applicationId, DecisionRequestDto decision, UUID decidedBy);
+    AdoptionApplication reject(UUID applicationId, DecisionRequestDto decision, UUID decidedBy);
+    AdoptionApplication cancel(UUID applicationId);
 }

@@ -4,6 +4,7 @@ import com.uit.petrescueapi.application.dto.organization.AddMemberRequestDto;
 import com.uit.petrescueapi.application.dto.organization.CreateOrganizationRequestDto;
 import com.uit.petrescueapi.domain.entity.Organization;
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ public interface OrganizationCommandPort {
     Organization update(UUID id, CreateOrganizationRequestDto cmd);
 
     void deactivate(UUID id);
+
+    Organization changeStatus(UUID id, OrganizationStatus newStatus);
 
     OrganizationMember addMember(UUID organizationId, AddMemberRequestDto cmd);
 

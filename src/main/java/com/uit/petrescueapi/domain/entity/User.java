@@ -22,7 +22,15 @@ public class User {
     private String username;
     private String email;
     private String passwordHash;
+    private String fullName;
     private String avatarUrl;
+    private String phone;
+    private String gender;
+    private String streetAddress;
+    private String wardCode;
+    private String wardName;
+    private String provinceCode;
+    private String provinceName;
 
     @Builder.Default
     private UserStatus status = UserStatus.PENDING_VERIFICATION;

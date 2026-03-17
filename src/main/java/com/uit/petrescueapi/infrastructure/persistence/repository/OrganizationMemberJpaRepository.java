@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -30,8 +31,10 @@ public interface OrganizationMemberJpaRepository
     @Query("SELECT m.role FROM OrganizationMemberJpaEntity m WHERE m.userId = :userId AND m.status = 'ACTIVE' ORDER BY m.joinedAt ASC LIMIT 1")
     String findOrgRoleByUserId(@Param("userId") UUID userId);
 
+    @Query("SELECT m.role FROM OrganizationMemberJpaEntity m WHERE m.organizationId = :organizationId AND m.userId = :userId AND m.status = 'ACTIVE'")
+    Optional<String> findRoleByOrgAndUser(@Param("organizationId") UUID organizationId, @Param("userId") UUID userId);
+
     /**
-     * Single JOIN query — avoids N+1 when listing members.
      * Fetches username from the users table in the same round-trip.
      */
     @Query("""

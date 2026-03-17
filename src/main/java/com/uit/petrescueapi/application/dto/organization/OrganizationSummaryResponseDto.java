@@ -28,16 +28,16 @@ public class OrganizationSummaryResponseDto {
     private String status;
 
     @Schema(example = "Ngõ 621 giao lộ 907")
-    private String street_address;
+    private String streetAddress;
 
     @Schema(example = "1234")
-    private String ward_code;
+    private String wardCode;
 
     @Schema(example = "Yên láng")
     private String ward;
 
     @Schema(example = "0123")
-    private String province_code;
+    private String provinceCode;
 
     @Schema(example = "Hà Nội")
     private String province;

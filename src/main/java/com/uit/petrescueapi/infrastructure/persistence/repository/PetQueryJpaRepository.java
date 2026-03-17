@@ -134,6 +134,6 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
 
     // ── Image URLs (ElementCollection, fetched separately) ──
 
-    @Query("SELECT i FROM PetJpaEntity p JOIN p.imageUrls i WHERE p.id = :id AND p.deleted = false")
+    @Query(value = "SELECT pm.url FROM pet_media pm JOIN pets p ON pm.pet_id = p.pet_id WHERE p.pet_id = :id AND p.is_deleted = false", nativeQuery = true)
     List<String> findImageUrlsById(@Param("id") UUID id);
 }

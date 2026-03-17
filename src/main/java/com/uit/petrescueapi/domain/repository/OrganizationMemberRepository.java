@@ -2,6 +2,7 @@ package com.uit.petrescueapi.domain.repository;
 
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -13,4 +14,5 @@ public interface OrganizationMemberRepository {
     boolean exists(UUID organizationId, UUID userId);
     UUID findOrganizationIdByUserId(UUID userId);
     String findOrgRoleByUserId(UUID userId);
+    Optional<String> findRoleByOrgAndUser(UUID organizationId, UUID userId);
 }

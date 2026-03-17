@@ -1,12 +1,22 @@
 # ==========================================================
-# LOCAL DEVELOPMENT — includes PostgreSQL container
-# Usage:  docker-compose up -d
+# LOCAL DEVELOPMENT
+#
+# ── Option 1 (default): Postgres only — run app with Gradle
+#    docker-compose up -d
+#    ./gradlew bootRun
+#
+# ── Option 2: Full Docker stack (JAR)
+#    docker-compose --profile docker up -d --build
+#
+# Reset DB:  docker-compose down -v
 # ==========================================================
 
 services:
-  # ── PostgreSQL (local dev only) ────────────────────
+  # ── PostgreSQL ────────────────────────────────────────
+  # Always started (no profile). Exposed on localhost:5432
+  # for both bootRun and full-docker workflows.
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.5-alpine
     container_name: petrescue-postgres
     environment:
       POSTGRES_DB: petrescue
@@ -21,9 +31,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
-  # ── Spring Boot App ────────────────────────────────
+  # ── Spring Boot App ───────────────────────────────────
+  # Only started with:  docker-compose --profile docker up -d --build
+  # Use bootRun for day-to-day development instead.
   app:
+    profiles: [docker]
     build: .
     container_name: petrescue-api
     depends_on:
@@ -37,6 +51,8 @@ services:
       DB_NAME: petrescue
       DB_USERNAME: petrescue
       DB_PASSWORD: petrescue
+      SPRING_FLYWAY_REPAIR_ON_MIGRATE: "true"
+    restart: on-failure
 
 volumes:
   pgdata:

@@ -7,6 +7,7 @@ import com.uit.petrescueapi.infrastructure.persistence.repository.OrganizationMe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -46,5 +47,10 @@ public class OrganizationMemberRepositoryAdapter implements OrganizationMemberRe
     @Override
     public String findOrgRoleByUserId(UUID userId) {
         return jpa.findOrgRoleByUserId(userId);
+    }
+
+    @Override
+    public Optional<String> findRoleByOrgAndUser(UUID organizationId, UUID userId) {
+        return jpa.findRoleByOrgAndUser(organizationId, userId);
     }
 }

@@ -6,12 +6,14 @@ import com.uit.petrescueapi.domain.exception.ResourceAlreadyExistsException;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.OrganizationMemberRepository;
 import com.uit.petrescueapi.domain.repository.OrganizationRepository;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -19,7 +21,7 @@ import java.util.UUID;
  *
  * Rules:
  *  • Newly created organizations always start with status {@code PENDING}.
- *  • An organization can only be deactivated (not hard-deleted) via {@code deactivate()}.
+ *  • An organization can be activated (PENDING → ACTIVE) or deactivated (ACTIVE → INACTIVE).
  *  • A user cannot be added to the same organization twice.
  *
  * {@code @Transactional} lives here only — not on adapters or controllers.
@@ -38,7 +40,7 @@ public class OrganizationDomainService {
     public Organization create(Organization org) {
         log.info("Creating organization: {}", org.getName());
         org.setOrganizationId(UUID.randomUUID());
-        org.setStatus("PENDING");
+        org.setStatus(OrganizationStatus.PENDING);
         return orgRepository.save(org);
     }
 
@@ -47,7 +49,7 @@ public class OrganizationDomainService {
         Organization existing = findOrThrow(id);
         if (patch.getName() != null)          existing.setName(patch.getName());
         if (patch.getType() != null)          existing.setType(patch.getType());
-        if (patch.getStreet_address() != null) existing.setStreet_address(patch.getStreet_address());
+        if (patch.getStreetAddress() != null) existing.setStreetAddress(patch.getStreetAddress());
         if (patch.getPhone() != null)         existing.setPhone(patch.getPhone());
         if (patch.getEmail() != null)         existing.setEmail(patch.getEmail());
         if (patch.getLatitude() != null)      existing.setLatitude(patch.getLatitude());
@@ -58,8 +60,17 @@ public class OrganizationDomainService {
     public void deactivate(UUID id) {
         log.info("Deactivating organization {}", id);
         Organization org = findOrThrow(id);
-        org.setStatus("INACTIVE");
+        org.setStatus(OrganizationStatus.INACTIVE);
+        org.setUpdatedAt(LocalDateTime.now());
         orgRepository.save(org);
+    }
+
+    public Organization changeStatus(UUID id, OrganizationStatus newStatus) {
+        log.info("Changing organization {} status to {}", id, newStatus);
+        Organization org = findOrThrow(id);
+        org.setStatus(newStatus);
+        org.setUpdatedAt(LocalDateTime.now());
+        return orgRepository.save(org);
     }
 
     public OrganizationMember addMember(UUID orgId, UUID userId, String role) {
@@ -85,6 +96,11 @@ public class OrganizationDomainService {
     @Transactional(readOnly = true)
     public boolean isMember(UUID orgId, UUID userId) {
         return memberRepository.exists(orgId, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<String> getMemberRole(UUID orgId, UUID userId) {
+        return memberRepository.findRoleByOrgAndUser(orgId, userId);
     }
 
     // ── Helpers ──────────────────────────────────────

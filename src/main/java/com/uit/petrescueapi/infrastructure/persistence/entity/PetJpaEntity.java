@@ -5,17 +5,10 @@ import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -28,15 +21,14 @@ import java.util.UUID;
         @Index(name = "idx_pet_status", columnList = "status"),
         @Index(name = "idx_pet_shelter", columnList = "shelter_id")
 })
-@EntityListeners(AuditingEntityListener.class)
 @Getter @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PetJpaEntity {
+public class PetJpaEntity extends BaseJpaEntity {
 
     @Id
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(name = "pet_id", updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "name", nullable = false, length = 100)
@@ -84,38 +76,6 @@ public class PetJpaEntity {
     @Column(name = "rescue_location", length = 255)
     private String rescueLocation;
 
-    @ElementCollection
-    @CollectionTable(name = "pet_images", joinColumns = @JoinColumn(name = "pet_id"))
-    @Column(name = "image_url", length = 500)
-    @Builder.Default
-    private List<String> imageUrls = new ArrayList<>();
-
     @Column(name = "shelter_id")
     private UUID shelterId;
-
-    // ── Audit ───────────────────────────────────
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @CreatedBy
-    @Column(name = "created_by", updatable = false)
-    private UUID createdBy;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @LastModifiedBy
-    @Column(name = "updated_by")
-    private UUID updatedBy;
-
-    @Column(name = "is_deleted", nullable = false)
-    private boolean deleted;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private UUID deletedBy;
 }

@@ -25,7 +25,7 @@ public class OrganizationMemberResponseDto {
     @Schema(example = "johndoe")
     private String username;
 
-    @Schema(example = "MANAGER", allowableValues = {"OWNER", "MANAGER", "MEMBER", "VOLUNTEER"})
+    @Schema(example = "STAFF", allowableValues = {"OWNER", "STAFF", "VET"})
     private String role;
 
     @Schema(example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE"})

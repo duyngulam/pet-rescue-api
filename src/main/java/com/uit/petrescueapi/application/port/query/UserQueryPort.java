@@ -2,22 +2,14 @@ package com.uit.petrescueapi.application.port.query;
 
 import com.uit.petrescueapi.application.dto.user.UserReputationResponseDto;
 import com.uit.petrescueapi.application.dto.user.UserResponseDto;
+import com.uit.petrescueapi.application.dto.user.UserSummaryResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
-/**
- * Query (read) port for User operations.
- * Handles profile lookups, user listing and reputation queries.
- */
 public interface UserQueryPort {
-
     UserResponseDto findById(UUID userId);
-
-    UserResponseDto getCurrentUser();
-
-    Page<UserResponseDto> findAll(Pageable pageable);
-
+    Page<UserSummaryResponseDto> findAll(Pageable pageable);
     UserReputationResponseDto getReputation(UUID userId);
 }

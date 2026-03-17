@@ -1,0 +1,124 @@
+package com.uit.petrescueapi.domain.service;
+
+import com.uit.petrescueapi.domain.entity.RescueCase;
+import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.repository.RescueCaseRepository;
+import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Domain service encapsulating RescueCase business rules.
+ *
+ * Rules:
+ *  - New rescue cases always start with status REPORTED.
+ *  - Status transitions follow: REPORTED -> IN_PROGRESS -> RESCUED -> CLOSED.
+ *  - Deletion is soft-delete.
+ *
+ * {@code @Transactional} lives here only — not on adapters or controllers.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class RescueCaseDomainService {
+
+    private final RescueCaseRepository rescueCaseRepository;
+
+    // ── Status-transition matrix ───────────────────
+    private static final Map<RescueCaseStatus, Set<RescueCaseStatus>> ALLOWED_TRANSITIONS = Map.of(
+            RescueCaseStatus.REPORTED,    Set.of(RescueCaseStatus.IN_PROGRESS, RescueCaseStatus.CLOSED),
+            RescueCaseStatus.IN_PROGRESS, Set.of(RescueCaseStatus.RESCUED, RescueCaseStatus.CLOSED),
+            RescueCaseStatus.RESCUED,     Set.of(RescueCaseStatus.CLOSED),
+            RescueCaseStatus.CLOSED,      Set.of()
+    );
+
+    // ── Queries ─────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public RescueCase findById(UUID caseId) {
+        return rescueCaseRepository.findById(caseId)
+                .orElseThrow(() -> new ResourceNotFoundException("RescueCase", "caseId", caseId));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<RescueCase> findAll(Pageable pageable) {
+        return rescueCaseRepository.findAll(pageable);
+    }
+
+    // ── Commands ────────────────────────────────────
+
+    /**
+     * Report a new rescue case.
+     * Sets the id, status to REPORTED, and reportedAt timestamp.
+     */
+    public RescueCase report(RescueCase rescueCase) {
+        log.info("Reporting new rescue case");
+        rescueCase.setCaseId(UUID.randomUUID());
+        rescueCase.setStatus(RescueCaseStatus.REPORTED);
+        rescueCase.setReportedAt(LocalDateTime.now());
+        rescueCase.setCreatedAt(LocalDateTime.now());
+        return rescueCaseRepository.save(rescueCase);
+    }
+
+    /**
+     * Partial update of an existing rescue case.
+     */
+    public RescueCase update(UUID caseId, RescueCase patch) {
+        log.debug("Updating rescue case {}", caseId);
+        RescueCase existing = findById(caseId);
+        applyUpdates(existing, patch);
+        existing.setUpdatedAt(LocalDateTime.now());
+        return rescueCaseRepository.save(existing);
+    }
+
+    /**
+     * Change the status of a rescue case with transition validation.
+     */
+    public RescueCase changeStatus(UUID caseId, RescueCaseStatus newStatus) {
+        log.info("Changing rescue case {} status to {}", caseId, newStatus);
+        RescueCase rescueCase = findById(caseId);
+        RescueCaseStatus current = rescueCase.getStatus();
+
+        Set<RescueCaseStatus> allowed = ALLOWED_TRANSITIONS.getOrDefault(current, Set.of());
+        if (!allowed.contains(newStatus)) {
+            throw new IllegalStateException(
+                    String.format("Cannot transition rescue case status from %s to %s", current, newStatus));
+        }
+
+        rescueCase.setStatus(newStatus);
+        rescueCase.setUpdatedAt(LocalDateTime.now());
+
+        if (newStatus == RescueCaseStatus.CLOSED || newStatus == RescueCaseStatus.RESCUED) {
+            rescueCase.setResolvedAt(LocalDateTime.now());
+        }
+
+        return rescueCaseRepository.save(rescueCase);
+    }
+
+    // ── Private helpers ─────────────────────────────
+
+    private void applyUpdates(RescueCase target, RescueCase source) {
+        if (source.getSpecies() != null)      target.setSpecies(source.getSpecies());
+        if (source.getColor() != null)        target.setColor(source.getColor());
+        if (source.getSize() != null)         target.setSize(source.getSize());
+        if (source.getCondition() != null)    target.setCondition(source.getCondition());
+        if (source.getDescription() != null)  target.setDescription(source.getDescription());
+        if (source.getLatitude() != null)     target.setLatitude(source.getLatitude());
+        if (source.getLongitude() != null)    target.setLongitude(source.getLongitude());
+        if (source.getLocationText() != null) target.setLocationText(source.getLocationText());
+        if (source.getProvinceCode() != null) target.setProvinceCode(source.getProvinceCode());
+        if (source.getWardCode() != null)     target.setWardCode(source.getWardCode());
+        if (source.getOrganizationId() != null) target.setOrganizationId(source.getOrganizationId());
+        if (source.getPetId() != null)        target.setPetId(source.getPetId());
+    }
+}

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 public class CorsConfig {
-    @Value("${app.cors.allowed-origins:http://localhost:5173,https://pet-rescue-community.vercel.app}")
+    @Value("${app.cors.allowed-origins:*}")
     private String allowedOrigins;
 
     private List<String> parseOrigins() {
@@ -35,11 +35,18 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOrigins(origins.toArray(new String[0]))
+                var mapping = registry.addMapping("/api/**")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowedHeaders("*");
+
+                // If configured to allow all origins, use origin patterns to permit "*" with credentials
+                if (origins.size() == 1 && "*".equals(origins.get(0))) {
+                    mapping.allowedOriginPatterns("*");
+                    mapping.allowCredentials(true);
+                } else {
+                    mapping.allowedOrigins(origins.toArray(new String[0]));
+                    mapping.allowCredentials(true);
+                }
             }
         };
     }
@@ -47,7 +54,13 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(parseOrigins());
+        List<String> origins = parseOrigins();
+        if (origins.size() == 1 && "*".equals(origins.get(0))) {
+            // allow any origin using pattern (compatible with allowCredentials)
+            config.setAllowedOriginPatterns(List.of("*"));
+        } else {
+            config.setAllowedOrigins(origins);
+        }
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.addAllowedHeader("*");
         config.setAllowCredentials(true);

@@ -139,7 +139,33 @@ QUERY:   Controller → PetQueryPort → PetQueryUseCase → PetQueryDataPort �
 - Domain service methods are atomic — one call = one transaction
 - For read-only queries, use `@Transactional(readOnly = true)` on domain service query methods or query adapters
 - Controllers never handle transactions — they orchestrate ports only
-- **CRITICAL for Spring Security**: `UserDetailsService.loadUserByUsername()` MUST have `@Transactional(readOnly = true)` to keep Hibernate session open while accessing lazy-loaded collections (e.g., user roles). Without it, you'll get `LazyInitializationException: no Session`.
+
+**CRITICAL: Avoiding LazyInitializationException**
+This error occurs when accessing lazy-loaded collections (e.g., `UserJpaEntity.roles`) outside a transaction/Hibernate session. Common scenarios:
+
+1. **Spring Security UserDetailsService** (FIXED):
+   - `CustomUserDetailsService.loadUserByUsername()` MUST have `@Transactional(readOnly = true)`
+   - Ensures Hibernate session stays open while accessing `entity.getRoles()`
+   - Without it: `LazyInitializationException: failed to lazily initialize a collection of role: com.uit.petrescueapi.infrastructure.persistence.entity.UserJpaEntity.roles: could not initialize proxy - no Session`
+
+2. **Use-Cases Accessing Domain Entity Collections** (FIXED):
+   - If a use-case method accesses lazy-loaded collections (e.g., `user.getRoles()`) from domain entities returned by domain services, add `@Transactional(readOnly = true)`
+   - Example: `AuthCommandUseCase.refreshToken()` and `buildTokenResponse()` access `user.getRoles()` after fetching from `authDomainService`
+   - Solution: Annotate these specific methods with `@Transactional(readOnly = true)` to keep session open
+
+3. **Query Adapters** (FIXED):
+   - All query adapters (e.g., `AuthQueryAdapter`) that access lazy-loaded collections should have class-level `@Transactional(readOnly = true)`
+   - This ensures Hibernate session is active when mapping domain entities → DTOs
+
+4. **Prevention Strategies**:
+   - Use `@Query` with `LEFT JOIN FETCH` in JPA repositories to eagerly load collections (e.g., `findByEmailWithRoles()`)
+   - Keep domain service methods `@Transactional` — entities returned within transaction have loaded collections
+   - If accessing collections AFTER transaction boundary, add `@Transactional(readOnly = true)` to that method
+   - Query path should use interface projections instead of accessing lazy-loaded domain entities
+
+**When to add @Transactional to use-cases:**
+- **EXCEPTION CASE**: If a use-case method directly accesses lazy-loaded collections on domain entities (not common in CQRS), add `@Transactional(readOnly = true)` to that specific method
+- **NORMAL CASE**: Use-cases should NOT have `@Transactional` — they delegate to domain services (which ARE transactional)
 
 **Why command returns entity, query returns DTO:**
 - Commands change state → need domain invariants → return entity for continued operations or mapping

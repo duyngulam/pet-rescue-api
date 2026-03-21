@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -103,6 +104,7 @@ public class AuthCommandUseCase implements AuthCommandPort {
     // ── Refresh Token ───────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public AuthTokenResponseDto refreshToken(RefreshTokenRequestDto cmd) {
         RefreshToken newToken = authDomainService.rotateRefreshToken(
                 cmd.getRefreshToken(), refreshTokenExpiryDays);
@@ -167,6 +169,7 @@ public class AuthCommandUseCase implements AuthCommandPort {
 
     // ── Helpers ─────────────────────────────────
 
+    @Transactional(readOnly = true)
     private AuthTokenResponseDto buildTokenResponse(User user) {
         List<String> roleCodes = user.getRoles().stream()
                 .map(r -> r.getCode())
@@ -214,9 +217,7 @@ public class AuthCommandUseCase implements AuthCommandPort {
                 .phone(user.getPhone())
                 .gender(user.getGender())
                 .streetAddress(user.getStreetAddress())
-                .wardCode(user.getWardCode())
                 .wardName(user.getWardName())
-                .provinceCode(user.getProvinceCode())
                 .provinceName(user.getProvinceName())
                 .status(user.getStatus().name())
                 .emailVerified(user.isEmailVerified())

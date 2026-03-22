@@ -44,8 +44,13 @@ public interface UserQueryJpaRepository extends JpaRepository<UserJpaEntity, UUI
                u.avatarUrl     AS avatarUrl,
                u.emailVerified AS emailVerified,
                u.createdAt     AS createdAt,
-               u.updatedAt     AS updatedAt
+               u.updatedAt     AS updatedAt,
+               o.organizationId AS organizationId,
+               o.name          AS organizationName,
+               om.role         AS organizationRole
         FROM UserJpaEntity u
+        LEFT JOIN OrganizationMemberJpaEntity om ON om.userId = u.userId AND om.status = 'ACTIVE'
+        LEFT JOIN OrganizationJpaEntity o ON o.organizationId = om.organizationId
         WHERE u.userId = :id
     """)
     Optional<UserDetailProjection> findDetailById(@Param("id") UUID id);

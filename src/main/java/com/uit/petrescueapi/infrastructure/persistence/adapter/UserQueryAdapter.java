@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,7 @@ import java.util.UUID;
  * via entity relationships. For reputation, uses {@link UserReputationJpaRepository}.</p>
  */
 @Component
+@Transactional
 @RequiredArgsConstructor
 public class UserQueryAdapter implements UserQueryDataPort {
 
@@ -86,6 +88,9 @@ public class UserQueryAdapter implements UserQueryDataPort {
     private UserResponseDto toResponseDto(UserDetailProjection p, List<String> roles) {
         return UserResponseDto.builder()
                 .userId(p.getUserId())
+                .organizationId(p.getOrganizationId())
+                .organizationName(p.getOrganizationName())
+                .organizationRole(p.getOrganizationRole())
                 .username(p.getUsername())
                 .email(p.getEmail())
                 .status(p.getStatus())

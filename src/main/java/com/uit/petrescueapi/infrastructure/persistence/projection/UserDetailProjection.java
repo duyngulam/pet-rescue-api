@@ -6,7 +6,8 @@ import java.util.UUID;
 /**
  * Spring Data interface projection for user detail queries.
  *
- * <p>Returns all user fields needed for a detail view.</p>
+ * <p>Returns all user fields needed for a detail view, including organization data
+ * (if the user has MEMBER role and is linked to an organization via organization_members).</p>
  */
 public interface UserDetailProjection {
 
@@ -21,4 +22,9 @@ public interface UserDetailProjection {
     boolean getEmailVerified();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
+
+    // ── Organization fields (via LEFT JOIN organization_members + organizations) ──
+    UUID getOrganizationId();
+    String getOrganizationName();
+    String getOrganizationRole();
 }

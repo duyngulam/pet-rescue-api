@@ -4,7 +4,6 @@ import com.uit.petrescueapi.application.dto.auth.AuthTokenResponseDto;
 import com.uit.petrescueapi.application.dto.auth.LoginRequestDto;
 import com.uit.petrescueapi.application.dto.auth.RefreshTokenRequestDto;
 import com.uit.petrescueapi.application.dto.auth.RegisterRequestDto;
-import com.uit.petrescueapi.application.dto.user.UserResponseDto;
 import com.uit.petrescueapi.application.port.command.AuthCommandPort;
 import com.uit.petrescueapi.application.port.query.AuthQueryPort;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
@@ -15,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 /**
  * REST controller for authentication & user registration.
@@ -39,8 +36,9 @@ import java.util.UUID;
  * <p>Protected endpoints (JWT required):
  * <ul>
  *   <li>POST /logout</li>
- *   <li>GET  /me</li>
  * </ul>
+ *
+ * <p><strong>Note:</strong> For current user profile, use {@code GET /api/v1/users/me} instead.</p>
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -98,13 +96,5 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(Authentication authentication) {
         authCommandPort.logout(authentication.getName());
         return ResponseEntity.ok(ApiResponse.ok(null, "Logged out successfully"));
-    }
-
-    @GetMapping("/me")
-    @Operation(summary = "Get current user profile")
-    public ResponseEntity<ApiResponse<UserResponseDto>> me(Authentication authentication) {
-        UUID userId = UUID.fromString(authentication.getName());
-        UserResponseDto dto = authQueryPort.findUserById(userId);
-        return ResponseEntity.ok(ApiResponse.ok(dto));
     }
 }

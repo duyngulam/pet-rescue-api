@@ -1,5 +1,6 @@
 package com.uit.petrescueapi.presentation.controller;
 
+import com.uit.petrescueapi.application.dto.media.MediaFileResponseDto;
 import com.uit.petrescueapi.application.dto.pet.*;
 import com.uit.petrescueapi.application.port.command.PetDetailsCommandPort;
 import com.uit.petrescueapi.application.port.query.PetDetailsQueryPort;
@@ -63,5 +64,16 @@ public class PetDetailsController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(queryPort.findOwnerships(petId, PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/media")
+    @Operation(summary = "List media attachments for a pet (paginated)",
+               description = "Fetch all media files associated with a pet, paginated")
+    public ResponseEntity<ApiResponse<PageResponse<MediaFileResponseDto>>> getMedia(
+            @PathVariable UUID petId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findDiaryMedia(petId, PageRequest.of(page, size)))));
     }
 }

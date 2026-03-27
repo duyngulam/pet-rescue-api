@@ -58,4 +58,6 @@ public class CreatePetRequestDto {
     private List<String> imageUrls;
 
     private UUID shelterId;
+
+    private UUID rescueCaseId;
 }

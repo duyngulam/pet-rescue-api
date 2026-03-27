@@ -1,8 +1,10 @@
 package com.uit.petrescueapi.domain.service;
 
 import com.uit.petrescueapi.domain.entity.Pet;
+import com.uit.petrescueapi.domain.entity.PetCurrentOwner;
 import com.uit.petrescueapi.domain.entity.PetOwnership;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.repository.PetCurrentOwnerRepository;
 import com.uit.petrescueapi.domain.repository.PetOwnershipRepository;
 import com.uit.petrescueapi.domain.repository.PetRepository;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -39,10 +41,11 @@ public class PetDomainService {
 
     private final PetRepository petRepository;
     private final PetOwnershipRepository ownershipRepository;
+    private final PetCurrentOwnerRepository currentOwnerRepository;
 
     // ── Status-transition matrix ───────────────────
     private static final Map<PetStatus, Set<PetStatus>> ALLOWED_TRANSITIONS = Map.of(
-            PetStatus.UNOWNED,   Set.of(PetStatus.PENDING, PetStatus.FOSTERED, PetStatus.UNAVAILABLE),
+            PetStatus.UNOWNED,   Set.of(PetStatus.PENDING, PetStatus.FOSTERED, PetStatus.UNAVAILABLE, PetStatus.ADOPTED),
             PetStatus.PENDING,     Set.of(PetStatus.ADOPTED, PetStatus.UNOWNED),
             PetStatus.ADOPTED,     Set.of(PetStatus.UNOWNED),
             PetStatus.FOSTERED,    Set.of(PetStatus.UNOWNED, PetStatus.PENDING, PetStatus.ADOPTED),
@@ -81,7 +84,7 @@ public class PetDomainService {
 
     /**
      * Create a pet for a regular user (USER role).
-     * Creates Pet + PetOwnership with ownerType=USER atomically.
+     * Creates Pet + PetOwnership + PetCurrentOwner with ownerType=USER atomically.
      */
     public Pet createForUser(Pet pet, UUID userId) {
         log.info("Creating pet '{}' for user {}", pet.getName(), userId);
@@ -101,12 +104,21 @@ public class PetDomainService {
         ownershipRepository.save(ownership);
         log.debug("Created ownership record: pet {} → user {}", saved.getId(), userId);
 
+        // Update current owner lookup table
+        PetCurrentOwner currentOwner = PetCurrentOwner.builder()
+                .petId(saved.getId())
+                .ownerType("USER")
+                .ownerId(userId)
+                .build();
+        currentOwnerRepository.upsert(currentOwner);
+        log.debug("Updated current owner: pet {} → user {}", saved.getId(), userId);
+
         return saved;
     }
 
     /**
      * Create a pet for a shelter/organization (MEMBER role).
-     * Creates Pet + PetOwnership with ownerType=ORGANIZATION atomically.
+     * Creates Pet + PetOwnership + PetCurrentOwner with ownerType=ORGANIZATION atomically.
      */
     public Pet createForShelter(Pet pet, UUID shelterId) {
         log.info("Creating pet '{}' for shelter {}", pet.getName(), shelterId);
@@ -126,7 +138,51 @@ public class PetDomainService {
         ownershipRepository.save(ownership);
         log.debug("Created ownership record: pet {} → organization {}", saved.getId(), shelterId);
 
+        // Update current owner lookup table
+        PetCurrentOwner currentOwner = PetCurrentOwner.builder()
+                .petId(saved.getId())
+                .ownerType("ORGANIZATION")
+                .ownerId(shelterId)
+                .build();
+        currentOwnerRepository.upsert(currentOwner);
+        log.debug("Updated current owner: pet {} → organization {}", saved.getId(), shelterId);
+
         return saved;
+    }
+
+    /**
+     * Transfer ownership of a pet to a new owner.
+     * Ends current ownership and creates new ownership record.
+     */
+    public void transferOwnership(UUID petId, String newOwnerType, UUID newOwnerId) {
+        log.info("Transferring ownership of pet {} to {} {}", petId, newOwnerType, newOwnerId);
+        
+        // Verify pet exists
+        Pet pet = findById(petId);
+        LocalDateTime now = LocalDateTime.now();
+        
+        // End current ownership
+        ownershipRepository.endOwnership(petId, now);
+        
+        // Create new ownership record
+        PetOwnership newOwnership = PetOwnership.builder()
+                .petId(petId)
+                .ownerType(newOwnerType)
+                .ownerId(newOwnerId)
+                .fromTime(now)
+                .toTime(null)
+                .build();
+        ownershipRepository.save(newOwnership);
+        
+        // Update current owner lookup table
+        PetCurrentOwner currentOwner = PetCurrentOwner.builder()
+                .petId(petId)
+                .ownerType(newOwnerType)
+                .ownerId(newOwnerId)
+                .build();
+        currentOwnerRepository.upsert(currentOwner);
+        
+        log.info("Ownership transferred: pet {} → {} {}", petId, newOwnerType, newOwnerId);
     }
 
     public Pet update(UUID id, Pet updated) {

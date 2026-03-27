@@ -442,7 +442,7 @@ Two GitHub Actions workflows in `.github/workflows/`:
 ## Conventions
 
 - **URI pattern**: `/api/v1/**` — all responses wrapped in `ApiResponse<T>`
-- **`@Transactional`**: Only on domain services — never on adapters or controllers
+- **`@Transactional`**: Only on domain services — never on adapters or controllers (see [TRANSACTION_BOUNDARIES.md](TRANSACTION_BOUNDARIES.md) for detailed rules)
 - **Mapping**: MapStruct for all conversions (domain ↔ JPA entity, domain → DTO)
 - **Soft delete**: `deleted`, `deletedAt`, `deletedBy` in `BaseEntity`
 - **Pagination**: Every GET list endpoint is paginated (`PageResponse<T>` envelope)

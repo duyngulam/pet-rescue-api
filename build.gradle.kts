@@ -53,6 +53,9 @@ dependencies {
     // Hibernate Spatial (PostGIS support)
     implementation("org.hibernate.orm:hibernate-spatial")
 
+    // Cloudinary SDK for media uploads
+    implementation("com.cloudinary:cloudinary-http45:1.39.0")
+
     // AOP (for audit logging)
     implementation("org.springframework.boot:spring-boot-starter-aop")
 

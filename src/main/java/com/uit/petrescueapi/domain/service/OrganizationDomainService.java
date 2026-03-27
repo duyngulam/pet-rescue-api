@@ -103,6 +103,16 @@ public class OrganizationDomainService {
         return memberRepository.findRoleByOrgAndUser(orgId, userId);
     }
 
+    /**
+     * Check if a user is an owner of the organization.
+     */
+    @Transactional(readOnly = true)
+    public boolean isOwner(UUID orgId, UUID userId) {
+        return memberRepository.findRoleByOrgAndUser(orgId, userId)
+                .map("OWNER"::equals)
+                .orElse(false);
+    }
+
     // ── Helpers ──────────────────────────────────────
 
     @Transactional(readOnly = true)

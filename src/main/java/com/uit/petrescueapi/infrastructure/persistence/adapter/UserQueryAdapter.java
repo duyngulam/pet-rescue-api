@@ -32,7 +32,7 @@ import java.util.UUID;
  * via entity relationships. For reputation, uses {@link UserReputationJpaRepository}.</p>
  */
 @Component
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class UserQueryAdapter implements UserQueryDataPort {
 

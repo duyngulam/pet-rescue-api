@@ -25,4 +25,5 @@ public class MediaFile extends BaseEntity {
     private Integer height;
     private Integer bytes;
     private String folder;
+    private String status; // TEMP or PERMANENT
 }

@@ -3,6 +3,7 @@ package com.uit.petrescueapi.infrastructure.persistence.adapter;
 import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
+import com.uit.petrescueapi.application.port.out.CloudStoragePort;
 import com.uit.petrescueapi.application.port.out.PetQueryDataPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.infrastructure.persistence.projection.PetDetailProjection;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,9 +29,11 @@ import java.util.UUID;
  */
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PetQueryAdapter implements PetQueryDataPort {
 
     private final PetQueryJpaRepository queryRepo;
+    private final CloudStoragePort cloudStoragePort;
 
     // ── List (summary) queries ──────────────────
 
@@ -55,7 +59,11 @@ public class PetQueryAdapter implements PetQueryDataPort {
         PetDetailProjection proj = queryRepo.findDetailById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", "id", id));
 
-        List<String> imageUrls = queryRepo.findImageUrlsById(id);
+        // Build URLs from public_ids (single source of truth)
+        List<String> imageUrls = queryRepo.findImagePublicIdsById(id).stream()
+                .filter(publicId -> publicId != null)
+                .map(cloudStoragePort::buildUrl)
+                .toList();
 
         return toResponseDto(proj, imageUrls);
     }

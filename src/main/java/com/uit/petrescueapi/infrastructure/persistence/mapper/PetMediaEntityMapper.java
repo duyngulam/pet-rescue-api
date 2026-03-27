@@ -13,6 +13,7 @@ public interface PetMediaEntityMapper {
     PetMedia toDomain(PetMediaJpaEntity entity);
 
     @Mapping(target = "pet", ignore = true)
+    @Mapping(target = "mediaFile", ignore = true)
     PetMediaJpaEntity toEntity(PetMedia domain);
 
     List<PetMedia> toDomainList(List<PetMediaJpaEntity> entities);

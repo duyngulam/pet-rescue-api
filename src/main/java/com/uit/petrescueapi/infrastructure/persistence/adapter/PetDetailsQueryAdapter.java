@@ -3,10 +3,11 @@ package com.uit.petrescueapi.infrastructure.persistence.adapter;
 import com.uit.petrescueapi.application.dto.media.MediaFileResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetMedicalRecordResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetOwnershipResponseDto;
+import com.uit.petrescueapi.application.port.out.CloudStoragePort;
 import com.uit.petrescueapi.application.port.out.PetDetailsQueryDataPort;
-import com.uit.petrescueapi.infrastructure.persistence.entity.PetMediaJpaEntity;
 import com.uit.petrescueapi.infrastructure.persistence.entity.PetMedicalRecordJpaEntity;
 import com.uit.petrescueapi.infrastructure.persistence.entity.PetsCurrentOwnerJpaEntity;
+import com.uit.petrescueapi.infrastructure.persistence.projection.PetMediaProjection;
 import com.uit.petrescueapi.infrastructure.persistence.repository.PetMediaJpaRepository;
 import com.uit.petrescueapi.infrastructure.persistence.repository.PetMedicalRecordJpaRepository;
 import com.uit.petrescueapi.infrastructure.persistence.repository.PetsCurrentOwnerJpaRepository;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,14 +27,19 @@ import java.util.UUID;
  *
  * <p>Handles medical records, ownership history, and diary media
  * for a specific pet.</p>
+ *
+ * <p>{@code @Transactional(readOnly = true)} ensures Hibernate session stays open
+ * during mapping operations.</p>
  */
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PetDetailsQueryAdapter implements PetDetailsQueryDataPort {
 
     private final PetMedicalRecordJpaRepository petMedicalRecordJpaRepo;
     private final PetsCurrentOwnerJpaRepository petsCurrentOwnerJpaRepo;
     private final PetMediaJpaRepository petMediaJpaRepo;
+    private final CloudStoragePort cloudStoragePort;
 
     // ── Medical records ─────────────────────────
 
@@ -56,21 +63,20 @@ public class PetDetailsQueryAdapter implements PetDetailsQueryDataPort {
 
     // ── Diary media ─────────────────────────────
 
+    /**
+     * Optimized: Uses single JOIN query instead of N+1 queries.
+     * Database pagination instead of in-memory pagination.
+     *
+     * <p>Before: 1 + N queries (fetch all, then fetch media_file for each)
+     * <p>After: 1 query (JOIN pet_media with media_files, paginated)
+     */
     @Override
     public Page<MediaFileResponseDto> findDiaryMedia(UUID petId, Pageable pageable) {
-        List<PetMediaJpaEntity> all = petMediaJpaRepo.findAllByPetId(petId);
-        List<MediaFileResponseDto> dtos = all.stream().map(this::toMediaDto).toList();
-
-        // Manual pagination over the full list
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), dtos.size());
-        List<MediaFileResponseDto> pageContent = (start < dtos.size())
-                ? dtos.subList(start, end)
-                : List.of();
-        return new PageImpl<>(pageContent, pageable, dtos.size());
+        return petMediaJpaRepo.findMediaWithFilesByPetId(petId, pageable)
+                .map(this::toMediaDto);
     }
 
-    // ── Entity → DTO mappers ────────────────────
+    // ── Projection/Entity → DTO mappers ─────────
 
     private PetMedicalRecordResponseDto toMedicalRecordDto(PetMedicalRecordJpaEntity e) {
         return PetMedicalRecordResponseDto.builder()
@@ -92,12 +98,20 @@ public class PetDetailsQueryAdapter implements PetDetailsQueryDataPort {
                 .build();
     }
 
-    private MediaFileResponseDto toMediaDto(PetMediaJpaEntity e) {
+    /**
+     * Maps projection (from JOIN query) to DTO.
+     * URL is built from publicId already included in projection — no extra query!
+     */
+    private MediaFileResponseDto toMediaDto(PetMediaProjection p) {
+        String url = (p.getPublicId() != null)
+                ? cloudStoragePort.buildUrl(p.getPublicId())
+                : null;
+
         return MediaFileResponseDto.builder()
-                .mediaId(e.getMediaId())
-                .url(e.getUrl())
-                .type(e.getType())
-                .createdAt(e.getCreatedAt())
+                .mediaId(p.getMediaId())
+                .url(url)
+                .type(p.getType())
+                .createdAt(p.getCreatedAt())
                 .build();
     }
 }

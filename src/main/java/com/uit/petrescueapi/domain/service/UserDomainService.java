@@ -77,4 +77,14 @@ public class UserDomainService {
         user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
+
+    /**
+     * Check if a user has a specific role.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasRole(UUID userId, String roleCode) {
+        User user = findById(userId);
+        return user.getRoles().stream()
+                .anyMatch(role -> roleCode.equals(role.getCode()));
+    }
 }

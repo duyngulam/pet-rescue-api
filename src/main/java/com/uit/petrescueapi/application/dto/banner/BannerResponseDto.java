@@ -1,0 +1,31 @@
+package com.uit.petrescueapi.application.dto.banner;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BannerResponseDto {
+
+    private UUID bannerId;
+    private String title;
+    private String subtitle;
+    private UUID mediaId;
+    private String mediaUrl;  // Resolved from media_files table
+    private String linkUrl;
+    private String linkType;
+    private Integer displayOrder;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+    private boolean active;
+    private String targetPage;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Query-side adapter (CQRS read path) for Tag.
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TagQueryAdapter implements TagQueryDataPort {
 
     private final TagQueryJpaRepository queryRepo;

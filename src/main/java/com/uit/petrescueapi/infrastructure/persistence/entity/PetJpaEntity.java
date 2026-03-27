@@ -78,4 +78,7 @@ public class PetJpaEntity extends BaseJpaEntity {
 
     @Column(name = "shelter_id")
     private UUID shelterId;
+
+    @Column(name = "rescue_case_id")
+    private UUID rescueCaseId;
 }

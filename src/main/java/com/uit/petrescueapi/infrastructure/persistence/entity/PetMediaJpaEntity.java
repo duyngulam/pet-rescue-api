@@ -9,10 +9,14 @@ import java.util.UUID;
 
 /**
  * JPA entity mapped to the {@code pet_media} table.
+ * References media_files via media_file_id - URL is built from public_id (single source of truth).
  * Lightweight media reference — does not extend BaseJpaEntity.
  */
 @Entity
-@Table(name = "pet_media")
+@Table(name = "pet_media", indexes = {
+        @Index(name = "idx_pet_media_pet", columnList = "pet_id"),
+        @Index(name = "idx_pet_media_media_file", columnList = "media_file_id")
+})
 @Getter
 @Setter
 @SuperBuilder
@@ -27,8 +31,8 @@ public class PetMediaJpaEntity {
     @Column(name = "pet_id", nullable = false)
     private UUID petId;
 
-    @Column(name = "url", columnDefinition = "TEXT")
-    private String url;
+    @Column(name = "media_file_id")
+    private UUID mediaFileId;
 
     @Column(name = "type", length = 20)
     private String type;
@@ -43,6 +47,14 @@ public class PetMediaJpaEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_id", insertable = false, updatable = false)
     private PetJpaEntity pet;
+
+    /**
+     * Read-only association to media_files.
+     * Persistence is handled by the {@code mediaFileId} field above.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "media_file_id", insertable = false, updatable = false)
+    private MediaFileJpaEntity mediaFile;
 
     @PrePersist
     void prePersist() {

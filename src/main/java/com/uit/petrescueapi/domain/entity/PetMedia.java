@@ -7,6 +7,7 @@ import java.util.UUID;
 
 /**
  * PetMedia — represents a media attachment (image/video) associated with a pet.
+ * References media_files via mediaFileId - URL is built from public_id (single source of truth).
  * Pure domain entity: no JPA annotations.
  */
 @Data
@@ -17,7 +18,7 @@ public class PetMedia {
 
     private UUID mediaId;
     private UUID petId;
-    private String url;
+    private UUID mediaFileId;  // Reference to media_files table
     private String type;
     private LocalDateTime createdAt;
 }

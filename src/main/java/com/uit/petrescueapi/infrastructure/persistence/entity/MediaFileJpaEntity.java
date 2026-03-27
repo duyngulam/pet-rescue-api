@@ -49,6 +49,10 @@ public class MediaFileJpaEntity extends BaseJpaEntity {
     @Column(name = "folder", length = 255)
     private String folder;
 
+    @Column(name = "status", length = 20)
+    @Builder.Default
+    private String status = "PERMANENT";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploader_id", insertable = false, updatable = false)
     private UserJpaEntity uploader;

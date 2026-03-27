@@ -65,6 +65,16 @@ public class AdoptionController {
         return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.cancel(id))));
     }
 
+    @PatchMapping("/{id}/complete")
+    @Operation(summary = "Complete an approved adoption", 
+               description = "Completes an adoption that has been approved. This transfers pet ownership to the adopter and marks the pet as ADOPTED.")
+    public ResponseEntity<ApiResponse<AdoptionResponseDto>> complete(
+            @PathVariable UUID id,
+            Authentication authentication) {
+        UUID completedBy = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toDto(commandPort.complete(id, completedBy))));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get adoption application by ID")
     public ResponseEntity<ApiResponse<AdoptionResponseDto>> getById(@PathVariable UUID id) {

@@ -11,4 +11,11 @@ public interface AdoptionCommandPort {
     AdoptionApplication approve(UUID applicationId, DecisionRequestDto decision, UUID decidedBy);
     AdoptionApplication reject(UUID applicationId, DecisionRequestDto decision, UUID decidedBy);
     AdoptionApplication cancel(UUID applicationId);
+    
+    /**
+     * Complete an approved adoption.
+     * This transfers pet ownership from the organization to the adopter.
+     * Only APPROVED applications can be completed.
+     */
+    AdoptionApplication complete(UUID applicationId, UUID completedBy);
 }

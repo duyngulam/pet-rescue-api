@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.presentation.controller;
 
 import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
+import com.uit.petrescueapi.application.dto.pet.TransferOwnershipRequestDto;
 import com.uit.petrescueapi.application.dto.pet.UpdatePetRequestDto;
 import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
@@ -92,6 +93,21 @@ public class PetController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         petCommandPort.delete(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Pet deleted"));
+    }
+
+    @PostMapping("/{id}/transfer-ownership")
+    @Operation(summary = "Transfer pet ownership (Admin or Organization Owner only)",
+               description = "Manually transfer pet ownership to a new user or organization. " +
+                           "Only system admins or owners of the organization that currently owns the pet can perform this action.")
+    public ResponseEntity<ApiResponse<Void>> transferOwnership(
+            @PathVariable UUID id,
+            @Valid @RequestBody TransferOwnershipRequestDto cmd,
+            Authentication authentication) {
+        UUID requesterId = UUID.fromString(authentication.getName());
+        log.debug("Transferring ownership of pet {} to {} {} by user {}",
+                id, cmd.getNewOwnerType(), cmd.getNewOwnerId(), requesterId);
+        petCommandPort.transferOwnership(id, cmd, requesterId);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Ownership transferred successfully"));
     }
 
     // ── Queries (read) ──────────────────────────

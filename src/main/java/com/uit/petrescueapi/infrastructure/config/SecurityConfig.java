@@ -1,5 +1,6 @@
 package com.uit.petrescueapi.infrastructure.config;
 
+import com.uit.petrescueapi.infrastructure.security.JwtAccessDeniedHandler;
 import com.uit.petrescueapi.infrastructure.security.JwtAuthenticationEntryPoint;
 import com.uit.petrescueapi.infrastructure.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final JwtAuthenticationEntryPoint jwtEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CorsConfigurationSource corsConfigurationSource;
 
     /** Endpoints that do not require a Bearer token. */
@@ -57,7 +59,10 @@ public class SecurityConfig {
                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                .csrf(AbstractHttpConfigurer::disable)
                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-               .exceptionHandling(e -> e.authenticationEntryPoint(jwtEntryPoint))
+               .exceptionHandling(e -> e
+                       .authenticationEntryPoint(jwtEntryPoint)
+                       .accessDeniedHandler(jwtAccessDeniedHandler)
+               )
                .authorizeHttpRequests(auth -> auth
                        .requestMatchers(PUBLIC_PATHS).permitAll()
                        .requestMatchers(HttpMethod.GET, "/api/v1/pets/**").permitAll()

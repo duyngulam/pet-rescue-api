@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -22,6 +23,7 @@ import java.util.UUID;
  */
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
 
     private final RescueCaseQueryJpaRepository queryRepo;

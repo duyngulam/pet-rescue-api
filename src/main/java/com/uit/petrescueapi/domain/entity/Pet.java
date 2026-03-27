@@ -45,5 +45,6 @@ public class Pet extends BaseEntity {
     private List<String> imageUrls = new ArrayList<>();
 
     private UUID shelterId;
+    private UUID rescueCaseId;
 }
 

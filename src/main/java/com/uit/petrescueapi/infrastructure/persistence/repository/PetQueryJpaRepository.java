@@ -132,8 +132,19 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
             @Param("organizationId") UUID organizationId,
             Pageable pageable);
 
-    // ── Image URLs (ElementCollection, fetched separately) ──
+    // ── Image public_ids (for URL building via CloudStoragePort) ──
 
-    @Query(value = "SELECT pm.url FROM pet_media pm JOIN pets p ON pm.pet_id = p.pet_id WHERE p.pet_id = :id AND p.is_deleted = false", nativeQuery = true)
-    List<String> findImageUrlsById(@Param("id") UUID id);
+    /**
+     * Fetches public_ids from media_files via pet_media.
+     * URL is NOT stored - build it using CloudStoragePort.buildUrl(publicId).
+     */
+    @Query(value = """
+            SELECT mf.public_id
+            FROM pet_media pm
+            JOIN media_files mf ON pm.media_file_id = mf.media_id
+            JOIN pets p ON pm.pet_id = p.pet_id
+            WHERE p.pet_id = :id AND p.is_deleted = false
+            ORDER BY pm.created_at DESC
+            """, nativeQuery = true)
+    List<String> findImagePublicIdsById(@Param("id") UUID id);
 }

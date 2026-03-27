@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RoleQueryAdapter implements RoleQueryDataPort {
 
     private final RoleQueryJpaRepository queryRepo;

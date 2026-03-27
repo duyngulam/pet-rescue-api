@@ -3,6 +3,7 @@ package com.uit.petrescueapi.domain.service;
 import com.uit.petrescueapi.domain.entity.AdoptionApplication;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.AdoptionApplicationRepository;
+import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.UUID;
  *  - Approval: PENDING -> APPROVED (requires decidedBy).
  *  - Rejection: PENDING -> REJECTED (requires decidedBy).
  *  - Cancellation: PENDING -> CANCELED.
+ *  - Completion: APPROVED -> COMPLETED (transfers ownership).
  *
  * {@code @Transactional} lives here only — not on adapters or controllers.
  */
@@ -29,6 +31,7 @@ import java.util.UUID;
 public class AdoptionDomainService {
 
     private final AdoptionApplicationRepository applicationRepository;
+    private final PetDomainService petDomainService;
 
     // ── Queries ─────────────────────────────────────
 
@@ -95,6 +98,30 @@ public class AdoptionDomainService {
 
         app.setStatus("CANCELED");
         app.setUpdatedAt(LocalDateTime.now());
+        return applicationRepository.save(app);
+    }
+
+    /**
+     * Complete an approved adoption.
+     * Transfers pet ownership from organization to adopter.
+     * Changes pet status to ADOPTED.
+     */
+    public AdoptionApplication complete(UUID applicationId, UUID completedBy) {
+        log.info("Completing adoption application {}", applicationId);
+        AdoptionApplication app = findById(applicationId);
+        validateStatus(app, "APPROVED", "COMPLETED");
+
+        // Transfer ownership to the adopter
+        petDomainService.transferOwnership(app.getPetId(), "USER", app.getApplicantId());
+        
+        // Update pet status to ADOPTED
+        petDomainService.changeStatus(app.getPetId(), PetStatus.ADOPTED);
+        
+        // Update application status
+        app.setStatus("COMPLETED");
+        app.setUpdatedAt(LocalDateTime.now());
+        log.info("Adoption completed: pet {} transferred to user {}", app.getPetId(), app.getApplicantId());
+        
         return applicationRepository.save(app);
     }
 

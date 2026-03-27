@@ -1,11 +1,16 @@
 package com.uit.petrescueapi.application.usecase;
 
 import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
+import com.uit.petrescueapi.application.dto.pet.TransferOwnershipRequestDto;
 import com.uit.petrescueapi.application.dto.pet.UpdatePetRequestDto;
 import com.uit.petrescueapi.application.port.command.PetCommandPort;
 import com.uit.petrescueapi.domain.entity.Pet;
+import com.uit.petrescueapi.domain.entity.PetCurrentOwner;
+import com.uit.petrescueapi.domain.exception.ForbiddenException;
+import com.uit.petrescueapi.domain.repository.PetCurrentOwnerRepository;
 import com.uit.petrescueapi.domain.service.PetDomainService;
 import com.uit.petrescueapi.domain.service.OrganizationDomainService;
+import com.uit.petrescueapi.domain.service.UserDomainService;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +30,8 @@ public class PetCommandUseCase implements PetCommandPort {
 
     private final PetDomainService domainService;
     private final OrganizationDomainService organizationDomainService;
+    private final UserDomainService userDomainService;
+    private final PetCurrentOwnerRepository currentOwnerRepository;
 
     @Override
     public Pet createForUser(CreatePetRequestDto cmd, UUID userId) {
@@ -36,13 +43,13 @@ public class PetCommandUseCase implements PetCommandPort {
     @Override
     public Pet createForShelter(CreatePetRequestDto cmd, UUID shelterId, UUID userId) {
         log.debug("Command: create pet '{}' for shelter {} by user {}", cmd.getName(), shelterId, userId);
-        
+
         // Validate membership in application layer
         if (!organizationDomainService.isMember(shelterId, userId)) {
-            throw new com.uit.petrescueapi.domain.exception.ForbiddenException(
+            throw new ForbiddenException(
                     String.format("User %s is not a member of organization %s", userId, shelterId));
         }
-        
+
         Pet pet = buildPetFromDto(cmd);
         return domainService.createForShelter(pet, shelterId);
     }
@@ -62,6 +69,7 @@ public class PetCommandUseCase implements PetCommandPort {
                 .rescueDate(cmd.getRescueDate())
                 .rescueLocation(cmd.getRescueLocation())
                 .imageUrls(cmd.getImageUrls())
+                .rescueCaseId(cmd.getRescueCaseId())
                 .build();
     }
 
@@ -96,5 +104,29 @@ public class PetCommandUseCase implements PetCommandPort {
     public Pet changeStatus(UUID id, PetStatus newStatus) {
         log.debug("Command: change status of pet {} to {}", id, newStatus);
         return domainService.changeStatus(id, newStatus);
+    }
+
+    @Override
+    public void transferOwnership(UUID petId, TransferOwnershipRequestDto cmd, UUID requesterId) {
+        log.debug("Command: transfer ownership of pet {} to {} {}", petId, cmd.getNewOwnerType(), cmd.getNewOwnerId());
+
+        // Authorization check: must be admin or owner of the pet's organization
+        boolean isAdmin = userDomainService.hasRole(requesterId, "ADMIN");
+
+        if (!isAdmin) {
+            // Check if requester is owner of the organization that currently owns the pet
+            PetCurrentOwner currentOwner = currentOwnerRepository.findByPetId(petId)
+                    .orElseThrow(() -> new ForbiddenException("Pet has no current owner"));
+
+            if (!"ORGANIZATION".equals(currentOwner.getOwnerType())) {
+                throw new ForbiddenException("Only admins can transfer user-owned pets");
+            }
+
+            if (!organizationDomainService.isOwner(currentOwner.getOwnerId(), requesterId)) {
+                throw new ForbiddenException("Only organization owners can transfer pet ownership");
+            }
+        }
+
+        domainService.transferOwnership(petId, cmd.getNewOwnerType(), cmd.getNewOwnerId());
     }
 }

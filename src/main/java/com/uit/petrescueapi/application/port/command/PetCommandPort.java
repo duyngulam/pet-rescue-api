@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.application.port.command;
 
 import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
+import com.uit.petrescueapi.application.dto.pet.TransferOwnershipRequestDto;
 import com.uit.petrescueapi.application.dto.pet.UpdatePetRequestDto;
 import com.uit.petrescueapi.domain.entity.Pet;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -35,4 +36,14 @@ public interface PetCommandPort {
     void delete(UUID id);
 
     Pet changeStatus(UUID id, PetStatus newStatus);
+
+    /**
+     * Manually transfer pet ownership to a new owner.
+     * Only admins and organization owners can perform this operation.
+     *
+     * @param petId ID of the pet to transfer
+     * @param cmd Transfer ownership request containing new owner details
+     * @param requesterId ID of the user making the request (for authorization)
+     */
+    void transferOwnership(UUID petId, TransferOwnershipRequestDto cmd, UUID requesterId);
 }

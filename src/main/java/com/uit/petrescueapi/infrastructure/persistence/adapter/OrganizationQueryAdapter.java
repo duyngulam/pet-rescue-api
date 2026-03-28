@@ -4,6 +4,7 @@ import com.uit.petrescueapi.application.dto.organization.OrganizationMemberRespo
 import com.uit.petrescueapi.application.dto.organization.OrganizationResponseDto;
 import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.OrganizationQueryDataPort;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import com.uit.petrescueapi.infrastructure.persistence.projection.OrganizationDetailProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.OrganizationMemberProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.OrganizationSummaryProjection;
@@ -32,6 +33,11 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
     }
 
     @Override
+    public Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable) {
+        return queryRepo.findByStatus(status, pageable).map(this::toSummaryDto);
+    }
+
+    @Override
     public Optional<OrganizationResponseDto> findById(UUID id) {
         return queryRepo.findDetailById(id).map(this::toDetailDto);
     }
@@ -48,30 +54,34 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
                 .organizationId(p.getOrganizationId())
                 .name(p.getName())
                 .type(p.getType())
+                .status(p.getStatus())
                 .streetAddress(p.getStreet_address())
-                .wardCode(p.getWard_code())
-                .ward(p.getWard())
-                .provinceCode(p.getProvince_code())
-                .province(p.getProvince())
+                .wardName(p.getWard_name())
+                .provinceName(p.getProvince_name())
                 .phone(p.getPhone())
                 .email(p.getEmail())
                 .build();
     }
 
     private OrganizationResponseDto toDetailDto(OrganizationDetailProjection p) {
-        String address = p.getStreet_address();
         return OrganizationResponseDto.builder()
                 .organizationId(p.getOrganizationId())
                 .name(p.getName())
+                .description(p.getDescription())
                 .type(p.getType())
-                .address(address)
+                .streetAddress(p.getStreet_address())
+                .wardName(p.getWard_name())
+                .provinceName(p.getProvince_name())
                 .phone(p.getPhone())
                 .email(p.getEmail())
+                .officialLink(p.getOfficial_link())
                 .latitude(p.getLatitude())
                 .longitude(p.getLongitude())
                 .status(p.getStatus())
+                .requestedByUserId(p.getRequested_by_user_id())
                 .createdBy(p.getCreatedBy())
                 .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt())
                 .build();
     }
 

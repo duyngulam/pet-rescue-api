@@ -14,6 +14,7 @@ public class Organization extends BaseEntity {
 
 	private java.util.UUID organizationId;
 	private String name;
+	private String description;
 	private String type; // SHELTER | VET_CENTER
 	private String streetAddress;
 	private String wardCode;
@@ -26,4 +27,5 @@ public class Organization extends BaseEntity {
 	private Double latitude;
 	private Double longitude;
 	private OrganizationStatus status; // PENDING | ACTIVE | INACTIVE
+	private java.util.UUID requestedByUserId; // User who requested org creation (for OWNER assignment on approval)
 }

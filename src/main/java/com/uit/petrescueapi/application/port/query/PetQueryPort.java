@@ -9,9 +9,6 @@ import java.util.UUID;
 
 /**
  * Query (read) port for Pet operations.
- *
- * <p>Returns DTOs directly — consistent with all other query ports.
- * Organization data is always included via optimized JOIN queries.</p>
  */
 public interface PetQueryPort {
 
@@ -19,7 +16,11 @@ public interface PetQueryPort {
 
     Page<PetSummaryResponseDto> findAll(Pageable pageable);
 
+    Page<PetSummaryResponseDto> findAllWithFilters(String species, String breed, String gender, Pageable pageable);
+
     Page<PetSummaryResponseDto> findAvailable(Pageable pageable);
+
+    Page<PetSummaryResponseDto> findAvailableWithFilters(String species, String breed, String gender, Pageable pageable);
 
     Page<PetSummaryResponseDto> findByOrganizationId(UUID organizationId, Pageable pageable);
 }

@@ -6,6 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Response DTO for rescue case.
+ * Contains names (wardName, provinceName) - codes are not exposed.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -29,8 +33,8 @@ public class RescueCaseResponseDto {
     private Double latitude;
     private Double longitude;
     private String locationText;
-    private String provinceCode;
-    private String wardCode;
+    private String wardName;
+    private String provinceName;
     private LocalDateTime reportedAt;
     private LocalDateTime resolvedAt;
     private LocalDateTime createdAt;

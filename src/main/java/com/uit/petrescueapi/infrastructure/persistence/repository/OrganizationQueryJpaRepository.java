@@ -1,5 +1,6 @@
 package com.uit.petrescueapi.infrastructure.persistence.repository;
 
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import com.uit.petrescueapi.infrastructure.persistence.entity.OrganizationJpaEntity;
 import com.uit.petrescueapi.infrastructure.persistence.projection.OrganizationDetailProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.OrganizationSummaryProjection;
@@ -18,11 +19,10 @@ public interface OrganizationQueryJpaRepository extends JpaRepository<Organizati
             SELECT o.organizationId AS organizationId,
                    o.name           AS name,
                    o.type           AS type,
+                   o.status         AS status,
                    o.streetAddress  AS street_address,
-                   o.wardCode       AS ward_code,
-                   o.wardName       AS ward,
-                   o.provinceCode   AS province_code,
-                   o.provinceName   AS province,
+                   o.wardName       AS ward_name,
+                   o.provinceName   AS province_name,
                    o.phone          AS phone,
                    o.email          AS email
             FROM OrganizationJpaEntity o
@@ -30,22 +30,39 @@ public interface OrganizationQueryJpaRepository extends JpaRepository<Organizati
             """)
     Page<OrganizationSummaryProjection> findAllSummary(Pageable pageable);
 
+    @Query("""
+            SELECT o.organizationId AS organizationId,
+                   o.name           AS name,
+                   o.type           AS type,
+                   o.status         AS status,
+                   o.streetAddress  AS street_address,
+                   o.wardName       AS ward_name,
+                   o.provinceName   AS province_name,
+                   o.phone          AS phone,
+                   o.email          AS email
+            FROM OrganizationJpaEntity o
+            WHERE o.status = :status
+            """)
+    Page<OrganizationSummaryProjection> findByStatus(@Param("status") OrganizationStatus status, Pageable pageable);
+
     @Query(value = """
-            SELECT o.organization_id AS organizationId,
-                   o.name            AS name,
-                   o.type            AS type,
-                   o.street_address  AS street_address,
-                   o.ward_code       AS ward_code,
-                   o.ward_name       AS ward_name,
-                   o.province_code   AS province_code,
-                   o.province_name   AS province_name,
-                   o.phone           AS phone,
-                   o.email           AS email,
-                   ST_Y(o.location)  AS latitude,
-                   ST_X(o.location)  AS longitude,
-                   o.status          AS status,
-                   o.created_by      AS createdBy,
-                   o.created_at      AS createdAt
+            SELECT o.organization_id     AS organizationId,
+                   o.name                AS name,
+                   o.description         AS description,
+                   o.type                AS type,
+                   o.street_address      AS street_address,
+                   o.ward_name           AS ward_name,
+                   o.province_name       AS province_name,
+                   o.phone               AS phone,
+                   o.email               AS email,
+                   o.official_link       AS official_link,
+                   ST_Y(o.location)      AS latitude,
+                   ST_X(o.location)      AS longitude,
+                   o.status              AS status,
+                   o.requested_by_user_id AS requested_by_user_id,
+                   o.created_by          AS createdBy,
+                   o.created_at          AS createdAt,
+                   o.updated_at          AS updatedAt
             FROM organizations o
             WHERE o.organization_id = :id
             """, nativeQuery = true)

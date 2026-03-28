@@ -51,6 +51,13 @@ public class RescueCaseCommandUseCase implements RescueCaseCommandPort {
                 .petId(cmd.getPetId())
                 .organizationId(cmd.getOrganizationId())
                 .description(cmd.getDescription())
+                .latitude(cmd.getLatitude())
+                .longitude(cmd.getLongitude())
+                .locationText(cmd.getLocationText())
+                .provinceCode(cmd.getProvinceCode())
+                .provinceName(cmd.getProvinceName())
+                .wardCode(cmd.getWardCode())
+                .wardName(cmd.getWardName())
                 .build();
     }
 }

@@ -4,6 +4,10 @@ import lombok.*;
 
 import java.util.UUID;
 
+/**
+ * Request DTO for creating a rescue case.
+ * Includes both codes and names for location fields.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,5 +24,7 @@ public class CreateRescueCaseRequestDto {
     private Double longitude;
     private String locationText;
     private String provinceCode;
+    private String provinceName;
     private String wardCode;
+    private String wardName;
 }

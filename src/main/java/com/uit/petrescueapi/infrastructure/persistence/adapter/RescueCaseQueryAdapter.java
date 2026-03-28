@@ -80,8 +80,19 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
                 .reporterUsername(p.getReporterUsername())
                 .organizationId(p.getOrganizationId())
                 .organizationName(p.getOrganizationName())
+                .species(p.getSpecies())
+                .color(p.getColor())
+                .size(p.getSize())
+                .condition(p.getCondition())
+                .description(p.getDescription())
                 .status(p.getStatus())
+                .latitude(p.getLocationLat())
+                .longitude(p.getLocationLng())
+                .locationText(p.getLocationText())
+                .wardName(p.getWardName())
+                .provinceName(p.getProvinceName())
                 .reportedAt(p.getReportedAt())
+                .resolvedAt(p.getResolvedAt())
                 .build();
     }
 }

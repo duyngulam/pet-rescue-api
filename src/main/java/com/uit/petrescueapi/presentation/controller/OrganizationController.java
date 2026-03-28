@@ -18,7 +18,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -42,11 +44,25 @@ public class OrganizationController {
     // ── Commands (write) ─────────────────────────
 
     @PostMapping
-    @Operation(summary = "Create a new organization")
+    @Operation(summary = "Create a new organization",
+            description = "Admin: creates directly as ACTIVE. User: creates as PENDING (becomes OWNER when approved)")
     public ResponseEntity<ApiResponse<OrganizationResponseDto>> create(
-            @RequestBody CreateOrganizationRequestDto cmd) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(mapper.toDto(commandPort.create(cmd))));
+            @RequestBody CreateOrganizationRequestDto cmd,
+            Authentication authentication) {
+        UUID callerId = UUID.fromString(authentication.getName());
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> a.equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            log.info("Admin {} creating organization '{}' (direct ACTIVE)", callerId, cmd.getName());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(mapper.toDto(commandPort.createByAdmin(cmd))));
+        } else {
+            log.info("User {} creating organization '{}' (PENDING)", callerId, cmd.getName());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.created(mapper.toDto(commandPort.createByUser(cmd, callerId))));
+        }
     }
 
     @PutMapping("/{id}")
@@ -58,7 +74,9 @@ public class OrganizationController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Change organization status (ACTIVE | INACTIVE | PENDING)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Change organization status (ADMIN only)",
+            description = "When changing PENDING → ACTIVE, the requesting user is auto-assigned as OWNER")
     public ResponseEntity<ApiResponse<OrganizationResponseDto>> changeStatus(
             @PathVariable UUID id,
             @RequestParam OrganizationStatus status) {
@@ -125,6 +143,35 @@ public class OrganizationController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/active")
+    @Operation(summary = "List active organizations (public)")
+    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getActive(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findByStatus(OrganizationStatus.ACTIVE, PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "List pending organizations (ADMIN only)")
+    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getPending(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findByStatus(OrganizationStatus.PENDING, PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/inactive")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "List inactive organizations (ADMIN only)")
+    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getInactive(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findByStatus(OrganizationStatus.INACTIVE, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/{id}/members")

@@ -119,21 +119,27 @@ public class PetController {
     }
 
     @GetMapping
-    @Operation(summary = "List all pets (paginated, includes organization)")
+    @Operation(summary = "List all pets (paginated, with optional filters)")
     public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String species,
+            @RequestParam(required = false) String breed,
+            @RequestParam(required = false) String gender) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(petQueryPort.findAll(PageRequest.of(page, size)))));
+                PageResponse.from(petQueryPort.findAllWithFilters(species, breed, gender, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/available")
-    @Operation(summary = "List available pets (paginated, includes organization)")
+    @Operation(summary = "List available pets (paginated, with optional filters)")
     public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getAvailable(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String species,
+            @RequestParam(required = false) String breed,
+            @RequestParam(required = false) String gender) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(petQueryPort.findAvailable(PageRequest.of(page, size)))));
+                PageResponse.from(petQueryPort.findAvailableWithFilters(species, breed, gender, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/by-organization/{organizationId}")

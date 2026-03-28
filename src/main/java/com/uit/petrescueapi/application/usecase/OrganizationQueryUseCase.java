@@ -6,6 +6,7 @@ import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResp
 import com.uit.petrescueapi.application.port.out.OrganizationQueryDataPort;
 import com.uit.petrescueapi.application.port.query.OrganizationQueryPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,11 @@ public class OrganizationQueryUseCase implements OrganizationQueryPort {
     @Override
     public Page<OrganizationSummaryResponseDto> findAll(Pageable pageable) {
         return queryDataPort.findAllSummary(pageable);
+    }
+
+    @Override
+    public Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable) {
+        return queryDataPort.findByStatus(status, pageable);
     }
 
     @Override

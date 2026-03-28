@@ -17,6 +17,9 @@ import java.util.UUID;
  * Command (write) use-case for Organization operations.
  * Translates request DTOs into domain calls and delegates business rules
  * to {@link OrganizationDomainService}.
+ * 
+ * Note: Request DTOs contain codes (provinceCode, wardCode). Names can be
+ * resolved from a location service if needed.
  */
 @Service
 @RequiredArgsConstructor
@@ -28,40 +31,29 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
     @Override
     public Organization create(CreateOrganizationRequestDto cmd) {
         log.debug("Command: create organization '{}'", cmd.getName());
-        Organization org = Organization.builder()
-                .name(cmd.getName())
-                .type(cmd.getType())
-                .streetAddress(cmd.getStreetAddress())
-                .wardCode(cmd.getWardCode())
-                .wardName(cmd.getWardName())
-                .provinceCode(cmd.getProvinceCode())
-                .provinceName(cmd.getProvinceName())
-                .phone(cmd.getPhone())
-                .email(cmd.getEmail())
-                .officialLink(cmd.getOfficialLink())
-                .latitude(cmd.getLatitude())
-                .longitude(cmd.getLongitude())
-                .build();
+        Organization org = buildOrganization(cmd);
         return domainService.create(org);
+    }
+
+    @Override
+    public Organization createByUser(CreateOrganizationRequestDto cmd, UUID requestedByUserId) {
+        log.debug("Command: create organization '{}' by user {}", cmd.getName(), requestedByUserId);
+        Organization org = buildOrganization(cmd);
+        org.setRequestedByUserId(requestedByUserId);
+        return domainService.createByUser(org);
+    }
+
+    @Override
+    public Organization createByAdmin(CreateOrganizationRequestDto cmd) {
+        log.debug("Command: create organization '{}' by admin (direct ACTIVE)", cmd.getName());
+        Organization org = buildOrganization(cmd);
+        return domainService.createByAdmin(org);
     }
 
     @Override
     public Organization update(UUID id, CreateOrganizationRequestDto cmd) {
         log.debug("Command: update organization {}", id);
-        Organization patch = Organization.builder()
-                .name(cmd.getName())
-                .type(cmd.getType())
-                .streetAddress(cmd.getStreetAddress())
-                .wardCode(cmd.getWardCode())
-                .wardName(cmd.getWardName())
-                .provinceCode(cmd.getProvinceCode())
-                .provinceName(cmd.getProvinceName())
-                .phone(cmd.getPhone())
-                .email(cmd.getEmail())
-                .officialLink(cmd.getOfficialLink())
-                .latitude(cmd.getLatitude())
-                .longitude(cmd.getLongitude())
-                .build();
+        Organization patch = buildOrganization(cmd);
         return domainService.update(id, patch);
     }
 
@@ -87,5 +79,27 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
     public void removeMember(UUID organizationId, UUID userId) {
         log.debug("Command: remove member {} from organization {}", userId, organizationId);
         domainService.removeMember(organizationId, userId);
+    }
+
+    /**
+     * Build Organization from request DTO.
+     * Request contains both codes and names for location fields.
+     */
+    private Organization buildOrganization(CreateOrganizationRequestDto cmd) {
+        return Organization.builder()
+                .name(cmd.getName())
+                .description(cmd.getDescription())
+                .type(cmd.getType())
+                .streetAddress(cmd.getStreetAddress())
+                .wardCode(cmd.getWardCode())
+                .wardName(cmd.getWardName())
+                .provinceCode(cmd.getProvinceCode())
+                .provinceName(cmd.getProvinceName())
+                .phone(cmd.getPhone())
+                .email(cmd.getEmail())
+                .officialLink(cmd.getOfficialLink())
+                .latitude(cmd.getLatitude())
+                .longitude(cmd.getLongitude())
+                .build();
     }
 }

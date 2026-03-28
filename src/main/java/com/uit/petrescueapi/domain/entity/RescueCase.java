@@ -31,7 +31,9 @@ public class RescueCase extends BaseEntity {
     private Double longitude;
     private String locationText;
     private String provinceCode;
+    private String provinceName;
     private String wardCode;
+    private String wardName;
     private RescueCaseStatus status;
     private LocalDateTime reportedAt;
     private LocalDateTime resolvedAt;

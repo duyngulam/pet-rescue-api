@@ -8,6 +8,7 @@ import java.util.UUID;
 
 /**
  * Response DTO for organization (shelter or vet center).
+ * Contains names (wardName, provinceName) - codes are not exposed.
  */
 @Data
 @Builder
@@ -22,19 +23,28 @@ public class OrganizationResponseDto {
     @Schema(example = "Happy Paws Shelter")
     private String name;
 
+    @Schema(example = "A shelter dedicated to rescuing and rehoming abandoned pets in Ho Chi Minh City.")
+    private String description;
+
     @Schema(example = "SHELTER", allowableValues = {"SHELTER", "VET_CENTER"})
     private String type;
 
-    @Schema(example = "123 Main St, District 1, HCMC")
-    private String address;
+    @Schema(example = "123 Nguyen Trai")
+    private String streetAddress;
+
+    @Schema(example = "Phuong 1")
+    private String wardName;
+
+    @Schema(example = "Ho Chi Minh")
+    private String provinceName;
 
     @Schema(example = "+84-28-1234-5678")
     private String phone;
 
-    @Schema(example = "contact@who.vn")
+    @Schema(example = "contact@shelter.vn")
     private String email;
 
-    @Schema(example = "facebook.com")
+    @Schema(example = "https://facebook.com/happypaws")
     private String officialLink;
 
     @Schema(example = "10.762622")
@@ -46,6 +56,10 @@ public class OrganizationResponseDto {
     @Schema(example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE", "PENDING"})
     private String status;
 
+    @Schema(description = "User who requested this organization (for pending orgs)")
+    private UUID requestedByUserId;
+
     private UUID createdBy;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

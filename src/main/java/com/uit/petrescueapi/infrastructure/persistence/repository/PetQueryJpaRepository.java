@@ -16,128 +16,141 @@ import java.util.UUID;
 
 /**
  * Dedicated read-only JPA repository for Pet queries (CQRS query side).
- *
- * <p>All queries here use LEFT JOIN to fetch related data in a single SQL statement.
- * Results are returned as <b>interface projections</b> — Spring Data maps columns
- * to getter methods automatically.</p>
- *
- * <p><b>To add a new query endpoint:</b>
- * <ol>
- *   <li>Create a new projection interface in {@code infrastructure/persistence/projection/}</li>
- *   <li>Add a {@code @Query} method here returning that projection</li>
- *   <li>Add a mapping method in {@code PetQueryAdapter}</li>
- * </ol></p>
  */
 @Repository
 public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID> {
 
-    // ── Summary (list views) ────────────────────
+    // ── Summary (list views) with filters ────────────────────
 
-    @Query("""
-        SELECT p.id          AS id,
-               p.name        AS name,
-               p.species     AS species,
-               p.breed       AS breed,
-               p.age         AS age,
-               p.vaccinated  AS vaccinated,
-               p.gender      AS gender,
-               p.status      AS status,
-               p.healthStatus AS healthStatus,
-               o.organizationId AS organizationId,
-               o.name        AS organizationName,
-               o.type        AS organizationType,
-               o.status      AS organizationStatus
-        FROM PetJpaEntity p
-        LEFT JOIN OrganizationJpaEntity o ON p.shelterId = o.organizationId
-        WHERE p.deleted = false
-    """)
-    Page<PetSummaryProjection> findAllSummaries(Pageable pageable);
+    @Query(value = """
+        SELECT p.pet_id AS id,
+               p.name AS name,
+               p.species AS species,
+               p.breed AS breed,
+               p.age AS age,
+               p.is_vaccinated AS vaccinated,
+               p.gender AS gender,
+               p.status AS status,
+               p.health_status AS healthStatus,
+               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               o.organization_id AS organizationId,
+               o.name AS organizationName,
+               o.province_name AS provinceName,
+               CAST(o.province_code AS INTEGER) AS provinceCode,
+               o.ward_name AS wardName,
+               CAST(o.ward_code AS INTEGER) AS wardCode
+        FROM pets p
+        LEFT JOIN organizations o ON p.shelter_id = o.organization_id
+        WHERE p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+    """, nativeQuery = true)
+    Page<PetSummaryProjection> findAllWithFilters(
+            @Param("species") String species,
+            @Param("breed") String breed,
+            @Param("gender") String gender,
+            Pageable pageable);
 
-    @Query("""
-        SELECT p.id          AS id,
-               p.name        AS name,
-               p.species     AS species,
-               p.breed       AS breed,
-               p.age         AS age,
-               p.vaccinated  AS vaccinated,
-               p.gender      AS gender,
-               p.status      AS status,
-               p.healthStatus AS healthStatus,
-               o.organizationId AS organizationId,
-               o.name        AS organizationName,
-               o.type        AS organizationType,
-               o.status      AS organizationStatus
-        FROM PetJpaEntity p
-        LEFT JOIN OrganizationJpaEntity o ON p.shelterId = o.organizationId
-        WHERE p.deleted = false AND p.status = 'AVAILABLE'
-    """)
-    Page<PetSummaryProjection> findAvailableSummaries(Pageable pageable);
+    @Query(value = """
+        SELECT p.pet_id AS id,
+               p.name AS name,
+               p.species AS species,
+               p.breed AS breed,
+               p.age AS age,
+               p.is_vaccinated AS vaccinated,
+               p.gender AS gender,
+               p.status AS status,
+               p.health_status AS healthStatus,
+               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               o.organization_id AS organizationId,
+               o.name AS organizationName,
+               o.province_name AS provinceName,
+               CAST(o.province_code AS INTEGER) AS provinceCode,
+               o.ward_name AS wardName,
+               CAST(o.ward_code AS INTEGER) AS wardCode
+        FROM pets p
+        LEFT JOIN organizations o ON p.shelter_id = o.organization_id
+        WHERE p.is_deleted = false AND p.status = 'AVAILABLE'
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+    """, nativeQuery = true)
+    Page<PetSummaryProjection> findAvailableWithFilters(
+            @Param("species") String species,
+            @Param("breed") String breed,
+            @Param("gender") String gender,
+            Pageable pageable);
 
     // ── Detail (single pet) ─────────────────────
 
-    @Query("""
-        SELECT p.id           AS id,
-               p.name         AS name,
-               p.species      AS species,
-               p.breed        AS breed,
-               p.age          AS age,
-               p.gender       AS gender,
-               p.color        AS color,
-               p.weight       AS weight,
-               p.description  AS description,
-               p.status       AS status,
-               p.healthStatus AS healthStatus,
-               p.vaccinated   AS vaccinated,
-               p.neutered     AS neutered,
-               p.rescueDate   AS rescueDate,
-               p.rescueLocation AS rescueLocation,
-               p.shelterId    AS shelterId,
-               p.createdAt    AS createdAt,
-               p.updatedAt    AS updatedAt,
-               o.organizationId AS organizationId,
-               o.name         AS organizationName,
-               o.type         AS organizationType,
-               o.status       AS organizationStatus
-        FROM PetJpaEntity p
-        LEFT JOIN OrganizationJpaEntity o ON p.shelterId = o.organizationId
-        WHERE p.deleted = false AND p.id = :id
-    """)
+    @Query(value = """
+        SELECT p.pet_id AS id,
+               p.name AS name,
+               p.species AS species,
+               p.breed AS breed,
+               p.age AS age,
+               p.gender AS gender,
+               p.color AS color,
+               p.weight AS weight,
+               p.description AS description,
+               p.status AS status,
+               p.health_status AS healthStatus,
+               p.is_vaccinated AS vaccinated,
+               p.is_neutered AS neutered,
+               p.rescue_date AS rescueDate,
+               p.rescue_location AS rescueLocation,
+               p.shelter_id AS shelterId,
+               p.created_at AS createdAt,
+               p.updated_at AS updatedAt,
+               o.organization_id AS organizationId,
+               o.name AS organizationName,
+               o.province_name AS provinceName,
+               CAST(o.province_code AS INTEGER) AS provinceCode,
+               o.ward_name AS wardName,
+               CAST(o.ward_code AS INTEGER) AS wardCode
+        FROM pets p
+        LEFT JOIN organizations o ON p.shelter_id = o.organization_id
+        WHERE p.is_deleted = false AND p.pet_id = :id
+    """, nativeQuery = true)
     Optional<PetDetailProjection> findDetailById(@Param("id") UUID id);
 
-    // ── By Organization (via pet_ownerships join table) ────
+    // ── By Organization ────
 
-    @Query("""
-        SELECT p.id          AS id,
-               p.name        AS name,
-               p.species     AS species,
-               p.breed       AS breed,
-               p.age         AS age,
-               p.vaccinated  AS vaccinated,
-               p.gender      AS gender,
-               p.status      AS status,
-               p.healthStatus AS healthStatus,
-               o.organizationId AS organizationId,
-               o.name        AS organizationName,
-               o.type        AS organizationType,
-               o.status      AS organizationStatus
-        FROM PetOwnershipJpaEntity po
-        JOIN PetJpaEntity p ON po.petId = p.id
-        LEFT JOIN OrganizationJpaEntity o ON p.shelterId = o.organizationId
-        WHERE po.ownerId = :organizationId
-          AND po.ownerType = 'ORGANIZATION'
-          AND po.toTime IS NULL
-          AND p.deleted = false
-    """)
+    @Query(value = """
+        SELECT p.pet_id AS id,
+               p.name AS name,
+               p.species AS species,
+               p.breed AS breed,
+               p.age AS age,
+               p.is_vaccinated AS vaccinated,
+               p.gender AS gender,
+               p.status AS status,
+               p.health_status AS healthStatus,
+               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               o.organization_id AS organizationId,
+               o.name AS organizationName,
+               o.province_name AS provinceName,
+               CAST(o.province_code AS INTEGER) AS provinceCode,
+               o.ward_name AS wardName,
+               CAST(o.ward_code AS INTEGER) AS wardCode
+        FROM pet_ownerships po
+        JOIN pets p ON po.pet_id = p.pet_id
+        LEFT JOIN organizations o ON p.shelter_id = o.organization_id
+        WHERE po.owner_id = :organizationId
+          AND po.owner_type = 'ORGANIZATION'
+          AND po.to_time IS NULL
+          AND p.is_deleted = false
+    """, nativeQuery = true)
     Page<PetSummaryProjection> findSummariesByOrganizationId(
             @Param("organizationId") UUID organizationId,
             Pageable pageable);
 
-    // ── Image public_ids (for URL building via CloudStoragePort) ──
+    // ── Image public_ids ──
 
-    /**
-     * Fetches public_ids from media_files via pet_media.
-     * URL is NOT stored - build it using CloudStoragePort.buildUrl(publicId).
-     */
     @Query(value = """
             SELECT mf.public_id
             FROM pet_media pm

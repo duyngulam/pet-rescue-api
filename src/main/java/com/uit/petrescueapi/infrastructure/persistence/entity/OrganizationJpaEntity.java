@@ -27,6 +27,9 @@ public class OrganizationJpaEntity extends BaseJpaEntity {
     @Column(name = "name", length = 255)
     private String name;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "type", length = 50)
     private String type; // SHELTER | VET_CENTER
 
@@ -60,4 +63,7 @@ public class OrganizationJpaEntity extends BaseJpaEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50, nullable = false)
     private OrganizationStatus status; // PENDING | ACTIVE | INACTIVE
+
+    @Column(name = "requested_by_user_id")
+    private UUID requestedByUserId; // User who requested org creation (for OWNER assignment on approval)
 }

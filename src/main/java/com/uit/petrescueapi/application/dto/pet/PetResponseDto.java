@@ -1,7 +1,6 @@
 package com.uit.petrescueapi.application.dto.pet;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
+import com.uit.petrescueapi.application.dto.organization.OrganizationMinimalDto;
 import com.uit.petrescueapi.domain.valueobject.Gender;
 import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -14,7 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Response DTO for Pet data.
+ * Response DTO for Pet detail.
+ * Matches FE Pet interface.
  */
 @Data
 @Builder
@@ -28,23 +28,27 @@ public class PetResponseDto {
     private String breed;
     private Integer age;
     private String ageDisplay;
+    private boolean vaccinated;
     private Gender gender;
+    private PetStatus status;
+    private HealthStatus healthStatus;
+
+    private OrganizationMinimalDto organization;
+
+    private String province;
+    private Integer provinceCode;
+    private String ward;
+    private Integer wardCode;
+
+    // Detail fields
     private String color;
     private BigDecimal weight;
     private String description;
-    private PetStatus status;
-    private HealthStatus healthStatus;
-    private boolean vaccinated;
     private boolean neutered;
     private LocalDate rescueDate;
     private String rescueLocation;
     private List<String> imageUrls;
     private UUID shelterId;
-    
-    /** Optional: included when ?includeOrganization=true */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private OrganizationSummaryResponseDto organization;
-    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -1,7 +1,6 @@
 package com.uit.petrescueapi.application.dto.pet;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
+import com.uit.petrescueapi.application.dto.organization.OrganizationMinimalDto;
 import com.uit.petrescueapi.domain.valueobject.Gender;
 import com.uit.petrescueapi.domain.valueobject.HealthStatus;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
@@ -12,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Lightweight response DTO for pet list / search results.
- * Contains only the essential fields needed for card/grid views.
+ * Matches FE GetAllPetsResponse type.
  */
 @Data
 @Builder
@@ -22,7 +21,7 @@ import java.util.UUID;
 public class PetSummaryResponseDto {
 
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
-    private UUID id;
+    private UUID petId;
 
     @Schema(example = "Buddy")
     private String name;
@@ -33,8 +32,11 @@ public class PetSummaryResponseDto {
     @Schema(example = "Golden Retriever")
     private String breed;
 
-    @Schema(example = "24",description = "month")
+    @Schema(example = "24", description = "Age in months")
     private Integer age;
+
+    @Schema(example = "2 years")
+    private String ageDisplay;
 
     @Schema(example = "true")
     private boolean vaccinated;
@@ -43,23 +45,19 @@ public class PetSummaryResponseDto {
     private PetStatus status;
     private HealthStatus healthStatus;
 
-    @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
-    private UUID organizationId;
-    
-    /** Optional: included when ?includeOrganization=true */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private OrganizationSummaryResponseDto organization;
+    private OrganizationMinimalDto organization;
 
-    @Schema(example = "TP Ho Chi Minh")
+    @Schema(example = "Hồ Chí Minh")
     private String province;
 
-    @Schema(example = "1")
-    private  int provinceCode;
+    @Schema(example = "79")
+    private Integer provinceCode;
 
-    @Schema(example = "Di An")
+    @Schema(example = "Phường 1")
     private String ward;
-    @Schema(example = "2")
-    private  int wardCode;
+
+    @Schema(example = "00001")
+    private Integer wardCode;
 
     @Schema(description = "Thumbnail image URL (first image)", example = "https://storage.example.com/pets/buddy-01.jpg")
     private String imageUrl;

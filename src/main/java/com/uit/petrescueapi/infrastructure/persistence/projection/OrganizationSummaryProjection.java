@@ -6,11 +6,10 @@ public interface OrganizationSummaryProjection {
      UUID getOrganizationId();
      String getName();
      String getType(); // SHELTER | VET_CENTER
+     String getStatus();
      String getStreet_address();
-     String getProvince_code();
-     String getProvince();
-     String getWard_code();
-     String getWard();
+     String getWard_name();
+     String getProvince_name();
      String getPhone();
      String getEmail();
 }

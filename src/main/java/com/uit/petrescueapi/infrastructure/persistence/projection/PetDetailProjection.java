@@ -11,10 +11,6 @@ import java.util.UUID;
 
 /**
  * Spring Data interface projection for the pet detail query.
- *
- * <p>Returns all pet fields plus organization summary via LEFT JOIN.
- * {@code imageUrls} is fetched separately (ElementCollection) and
- * merged in the adapter.</p>
  */
 public interface PetDetailProjection {
 
@@ -38,9 +34,13 @@ public interface PetDetailProjection {
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
 
-    // ── Organization fields (nullable via LEFT JOIN) ─
+    // ── Organization fields (for nested OrganizationMinimalDto) ─
     UUID getOrganizationId();
     String getOrganizationName();
-    String getOrganizationType();
-    String getOrganizationStatus();
+
+    // ── Location fields (from organization) ─
+    String getProvinceName();
+    Integer getProvinceCode();
+    String getWardName();
+    Integer getWardCode();
 }

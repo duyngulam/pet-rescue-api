@@ -37,6 +37,10 @@ public class OrganizationDomainService {
 
     // ── Commands ────────────────────────────────────
 
+    /**
+     * @deprecated Use {@link #createByUser} or {@link #createByAdmin} instead
+     */
+    @Deprecated
     public Organization create(Organization org) {
         log.info("Creating organization: {}", org.getName());
         org.setOrganizationId(UUID.randomUUID());
@@ -44,14 +48,40 @@ public class OrganizationDomainService {
         return orgRepository.save(org);
     }
 
+    /**
+     * Create organization requested by a regular user.
+     * Status is set to PENDING; user becomes OWNER when approved.
+     */
+    public Organization createByUser(Organization org) {
+        log.info("Creating organization by user: {}", org.getName());
+        org.setOrganizationId(UUID.randomUUID());
+        org.setStatus(OrganizationStatus.PENDING);
+        return orgRepository.save(org);
+    }
+
+    /**
+     * Create organization by admin.
+     * Status is set directly to ACTIVE (no pending approval needed).
+     */
+    public Organization createByAdmin(Organization org) {
+        log.info("Creating organization by admin (direct ACTIVE): {}", org.getName());
+        org.setOrganizationId(UUID.randomUUID());
+        org.setStatus(OrganizationStatus.ACTIVE);
+        return orgRepository.save(org);
+    }
+
     public Organization update(UUID id, Organization patch) {
         log.debug("Updating organization {}", id);
         Organization existing = findOrThrow(id);
         if (patch.getName() != null)          existing.setName(patch.getName());
+        if (patch.getDescription() != null)   existing.setDescription(patch.getDescription());
         if (patch.getType() != null)          existing.setType(patch.getType());
         if (patch.getStreetAddress() != null) existing.setStreetAddress(patch.getStreetAddress());
+        if (patch.getWardCode() != null)      existing.setWardCode(patch.getWardCode());
+        if (patch.getProvinceCode() != null)  existing.setProvinceCode(patch.getProvinceCode());
         if (patch.getPhone() != null)         existing.setPhone(patch.getPhone());
         if (patch.getEmail() != null)         existing.setEmail(patch.getEmail());
+        if (patch.getOfficialLink() != null)  existing.setOfficialLink(patch.getOfficialLink());
         if (patch.getLatitude() != null)      existing.setLatitude(patch.getLatitude());
         if (patch.getLongitude() != null)     existing.setLongitude(patch.getLongitude());
         return orgRepository.save(existing);
@@ -68,9 +98,21 @@ public class OrganizationDomainService {
     public Organization changeStatus(UUID id, OrganizationStatus newStatus) {
         log.info("Changing organization {} status to {}", id, newStatus);
         Organization org = findOrThrow(id);
+        OrganizationStatus oldStatus = org.getStatus();
         org.setStatus(newStatus);
         org.setUpdatedAt(LocalDateTime.now());
-        return orgRepository.save(org);
+        Organization saved = orgRepository.save(org);
+
+        // Auto-assign OWNER role when approving a user-requested organization
+        if (oldStatus == OrganizationStatus.PENDING && newStatus == OrganizationStatus.ACTIVE) {
+            UUID requestedBy = org.getRequestedByUserId();
+            if (requestedBy != null && !memberRepository.exists(id, requestedBy)) {
+                log.info("Auto-assigning OWNER role to user {} for approved organization {}", requestedBy, id);
+                addMember(id, requestedBy, "OWNER");
+            }
+        }
+
+        return saved;
     }
 
     public OrganizationMember addMember(UUID orgId, UUID userId, String role) {

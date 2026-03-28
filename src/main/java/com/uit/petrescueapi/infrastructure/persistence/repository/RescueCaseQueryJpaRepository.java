@@ -66,8 +66,8 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
                rc.description   AS description,
                CAST(NULL AS double) AS locationLat,
                CAST(NULL AS double) AS locationLng,
-               rc.provinceCode  AS provinceCode,
-               rc.wardCode      AS wardCode,
+               rc.wardName      AS wardName,
+               rc.provinceName  AS provinceName,
                rc.resolvedAt    AS resolvedAt
         FROM RescueCaseJpaEntity rc
         LEFT JOIN UserJpaEntity u ON rc.reportedBy = u.userId

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 /**
  * Lightweight response DTO for organization list views.
+ * Contains names only (no codes).
  */
 @Data
 @Builder
@@ -30,17 +31,11 @@ public class OrganizationSummaryResponseDto {
     @Schema(example = "Ngõ 621 giao lộ 907")
     private String streetAddress;
 
-    @Schema(example = "1234")
-    private String wardCode;
-
-    @Schema(example = "Yên láng")
-    private String ward;
-
-    @Schema(example = "0123")
-    private String provinceCode;
+    @Schema(example = "Yên Láng")
+    private String wardName;
 
     @Schema(example = "Hà Nội")
-    private String province;
+    private String provinceName;
 
     @Schema(example = "0842417411")
     private String phone;

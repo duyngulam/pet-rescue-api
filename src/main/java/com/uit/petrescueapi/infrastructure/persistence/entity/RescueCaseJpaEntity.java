@@ -63,8 +63,14 @@ public class RescueCaseJpaEntity extends BaseJpaEntity {
     @Column(name = "province_code", length = 50)
     private String provinceCode;
 
+    @Column(name = "province_name")
+    private String provinceName;
+
     @Column(name = "ward_code", length = 50)
     private String wardCode;
+
+    @Column(name = "ward_name")
+    private String wardName;
 
     @Column(name = "status", length = 50)
     private String status;

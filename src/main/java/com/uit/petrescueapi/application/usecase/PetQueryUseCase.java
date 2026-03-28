@@ -14,10 +14,6 @@ import java.util.UUID;
 
 /**
  * Query (read) use-case for Pet operations.
- *
- * <p>Thin orchestrator: delegates directly to {@link PetQueryDataPort}
- * (implemented by the infrastructure query adapter). No domain service
- * involvement — queries bypass the domain layer entirely (CQRS).</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -35,14 +31,25 @@ public class PetQueryUseCase implements PetQueryPort {
     @Override
     public Page<PetSummaryResponseDto> findAll(Pageable pageable) {
         log.debug("Query: find all pets (paginated)");
-
         return queryDataPort.findAllSummaries(pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findAllWithFilters(String species, String breed, String gender, Pageable pageable) {
+        log.debug("Query: find all pets with filters (species={}, breed={}, gender={})", species, breed, gender);
+        return queryDataPort.findAllWithFilters(species, breed, gender, pageable);
     }
 
     @Override
     public Page<PetSummaryResponseDto> findAvailable(Pageable pageable) {
         log.debug("Query: find available pets (paginated)");
         return queryDataPort.findAvailableSummaries(pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findAvailableWithFilters(String species, String breed, String gender, Pageable pageable) {
+        log.debug("Query: find available pets with filters (species={}, breed={}, gender={})", species, breed, gender);
+        return queryDataPort.findAvailableWithFilters(species, breed, gender, pageable);
     }
 
     @Override

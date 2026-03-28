@@ -1,6 +1,6 @@
 package com.uit.petrescueapi.infrastructure.persistence.adapter;
 
-import com.uit.petrescueapi.application.dto.organization.OrganizationSummaryResponseDto;
+import com.uit.petrescueapi.application.dto.organization.OrganizationMinimalDto;
 import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.CloudStoragePort;
@@ -20,12 +20,6 @@ import java.util.UUID;
 
 /**
  * Query-side adapter (CQRS read path).
- *
- * <p>Executes optimized JOIN queries via {@link PetQueryJpaRepository},
- * maps infrastructure projections → application DTOs.</p>
- *
- * <p><b>To add a new query endpoint:</b> add a method here that
- * calls the JPA repository and maps the projection to a DTO.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -35,16 +29,26 @@ public class PetQueryAdapter implements PetQueryDataPort {
     private final PetQueryJpaRepository queryRepo;
     private final CloudStoragePort cloudStoragePort;
 
-    // ── List (summary) queries ──────────────────
+    // ── List (summary) queries with filters ──────────────────
 
     @Override
     public Page<PetSummaryResponseDto> findAllSummaries(Pageable pageable) {
-        return queryRepo.findAllSummaries(pageable).map(this::toSummaryDto);
+        return findAllWithFilters(null, null, null, pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findAllWithFilters(String species, String breed, String gender, Pageable pageable) {
+        return queryRepo.findAllWithFilters(species, breed, gender, pageable).map(this::toSummaryDto);
     }
 
     @Override
     public Page<PetSummaryResponseDto> findAvailableSummaries(Pageable pageable) {
-        return queryRepo.findAvailableSummaries(pageable).map(this::toSummaryDto);
+        return findAvailableWithFilters(null, null, null, pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findAvailableWithFilters(String species, String breed, String gender, Pageable pageable) {
+        return queryRepo.findAvailableWithFilters(species, breed, gender, pageable).map(this::toSummaryDto);
     }
 
     @Override
@@ -59,7 +63,6 @@ public class PetQueryAdapter implements PetQueryDataPort {
         PetDetailProjection proj = queryRepo.findDetailById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", "id", id));
 
-        // Build URLs from public_ids (single source of truth)
         List<String> imageUrls = queryRepo.findImagePublicIdsById(id).stream()
                 .filter(publicId -> publicId != null)
                 .map(cloudStoragePort::buildUrl)
@@ -71,44 +74,52 @@ public class PetQueryAdapter implements PetQueryDataPort {
     // ── Projection → DTO mappers ────────────────
 
     private PetSummaryResponseDto toSummaryDto(PetSummaryProjection p) {
-        PetSummaryResponseDto dto = PetSummaryResponseDto.builder()
-                .id(p.getId())
-                .name(p.getName())
-                .species(p.getSpecies())
-                .breed(p.getBreed())
-                .age(p.getAge())
-                .vaccinated(p.getVaccinated())
-                .gender(p.getGender())
-                .status(p.getStatus())
-                .healthStatus(p.getHealthStatus())
-                .organizationId(p.getOrganizationId())
-                .build();
-
-        if (p.getOrganizationId() != null) {
-            dto.setOrganization(toOrgSummary(
-                    p.getOrganizationId(),
-                    p.getOrganizationName(),
-                    p.getOrganizationType(),
-                    p.getOrganizationStatus()));
-        }
-
-        return dto;
-    }
-
-    private PetResponseDto toResponseDto(PetDetailProjection p, List<String> imageUrls) {
-        PetResponseDto dto = PetResponseDto.builder()
+        return PetSummaryResponseDto.builder()
                 .petId(p.getId())
                 .name(p.getName())
                 .species(p.getSpecies())
                 .breed(p.getBreed())
                 .age(p.getAge())
+                .ageDisplay(formatAge(p.getAge()))
+                .vaccinated(p.getVaccinated())
                 .gender(p.getGender())
+                .status(p.getStatus())
+                .healthStatus(p.getHealthStatus())
+                .imageUrl(p.getImageUrl())
+                .organization(p.getOrganizationId() != null ? OrganizationMinimalDto.builder()
+                        .organizationId(p.getOrganizationId())
+                        .name(p.getOrganizationName())
+                        .build() : null)
+                .province(p.getProvinceName())
+                .provinceCode(p.getProvinceCode())
+                .ward(p.getWardName())
+                .wardCode(p.getWardCode())
+                .build();
+    }
+
+    private PetResponseDto toResponseDto(PetDetailProjection p, List<String> imageUrls) {
+        return PetResponseDto.builder()
+                .petId(p.getId())
+                .name(p.getName())
+                .species(p.getSpecies())
+                .breed(p.getBreed())
+                .age(p.getAge())
+                .ageDisplay(formatAge(p.getAge()))
+                .vaccinated(p.getVaccinated())
+                .gender(p.getGender())
+                .status(p.getStatus())
+                .healthStatus(p.getHealthStatus())
+                .organization(p.getOrganizationId() != null ? OrganizationMinimalDto.builder()
+                        .organizationId(p.getOrganizationId())
+                        .name(p.getOrganizationName())
+                        .build() : null)
+                .province(p.getProvinceName())
+                .provinceCode(p.getProvinceCode())
+                .ward(p.getWardName())
+                .wardCode(p.getWardCode())
                 .color(p.getColor())
                 .weight(p.getWeight())
                 .description(p.getDescription())
-                .status(p.getStatus())
-                .healthStatus(p.getHealthStatus())
-                .vaccinated(p.getVaccinated())
                 .neutered(p.getNeutered())
                 .rescueDate(p.getRescueDate())
                 .rescueLocation(p.getRescueLocation())
@@ -117,24 +128,18 @@ public class PetQueryAdapter implements PetQueryDataPort {
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();
-
-        if (p.getOrganizationId() != null) {
-            dto.setOrganization(toOrgSummary(
-                    p.getOrganizationId(),
-                    p.getOrganizationName(),
-                    p.getOrganizationType(),
-                    p.getOrganizationStatus()));
-        }
-
-        return dto;
     }
 
-    private OrganizationSummaryResponseDto toOrgSummary(UUID id, String name, String type, String status) {
-        return OrganizationSummaryResponseDto.builder()
-                .organizationId(id)
-                .name(name)
-                .type(type)
-                .status(status)
-                .build();
+    private String formatAge(Integer ageInMonths) {
+        if (ageInMonths == null) return null;
+        if (ageInMonths < 12) {
+            return ageInMonths + " month" + (ageInMonths != 1 ? "s" : "");
+        }
+        int years = ageInMonths / 12;
+        int months = ageInMonths % 12;
+        if (months == 0) {
+            return years + " year" + (years != 1 ? "s" : "");
+        }
+        return years + " year" + (years != 1 ? "s" : "") + " " + months + " month" + (months != 1 ? "s" : "");
     }
 }

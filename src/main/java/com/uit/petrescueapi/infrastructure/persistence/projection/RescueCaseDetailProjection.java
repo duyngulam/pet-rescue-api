@@ -7,7 +7,7 @@ import java.util.UUID;
  * Spring Data interface projection for rescue case detail queries.
  *
  * <p>Returns all rescue case fields plus reporter, organization, and pet data
- * via LEFT JOIN.</p>
+ * via LEFT JOIN. Contains names (wardName, provinceName) for response.</p>
  */
 public interface RescueCaseDetailProjection {
 
@@ -31,7 +31,7 @@ public interface RescueCaseDetailProjection {
     String getDescription();
     Double getLocationLat();
     Double getLocationLng();
-    String getProvinceCode();
-    String getWardCode();
+    String getWardName();
+    String getProvinceName();
     LocalDateTime getResolvedAt();
 }

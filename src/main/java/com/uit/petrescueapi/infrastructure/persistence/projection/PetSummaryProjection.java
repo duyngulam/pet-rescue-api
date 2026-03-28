@@ -8,11 +8,6 @@ import java.util.UUID;
 
 /**
  * Spring Data interface projection for the pet summary list query.
- *
- * <p>Maps directly from the JPQL {@code SELECT ... FROM pets p LEFT JOIN organizations o}
- * query. Column aliases must match getter names (camelCase).</p>
- *
- * <p>Add new fields here + in the JPQL SELECT to expose more data.</p>
  */
 public interface PetSummaryProjection {
 
@@ -26,10 +21,15 @@ public interface PetSummaryProjection {
     Gender getGender();
     PetStatus getStatus();
     HealthStatus getHealthStatus();
+    String getImageUrl();
 
-    // ── Organization fields (nullable via LEFT JOIN) ─
+    // ── Organization fields (for nested OrganizationMinimalDto) ─
     UUID getOrganizationId();
     String getOrganizationName();
-    String getOrganizationType();
-    String getOrganizationStatus();
+
+    // ── Location fields (from organization) ─
+    String getProvinceName();
+    Integer getProvinceCode();
+    String getWardName();
+    Integer getWardCode();
 }

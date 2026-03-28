@@ -21,15 +21,9 @@ public interface OrganizationWebMapper {
 
     /**
      * Maps domain Organization → response DTO.
-     * {@code street_address} is exposed as {@code address} in the response for brevity.
-     * {@code status} (enum) is converted to string for the DTO response.
-     * Audit fields are set by AuditingEntityListener, not mapped here.
+     * All fields mapped directly; status (enum) is converted to string.
      */
-    @Mapping(target = "address", source = "streetAddress")
-    @Mapping(target = "officialLink", source = "officialLink")
     @Mapping(target = "status", source = "status")
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
     OrganizationResponseDto toDto(Organization organization);
 
     /**

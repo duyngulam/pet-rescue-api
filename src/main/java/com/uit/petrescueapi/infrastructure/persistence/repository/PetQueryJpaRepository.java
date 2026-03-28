@@ -32,8 +32,8 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.gender AS gender,
                p.status AS status,
                p.health_status AS healthStatus,
-               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
-                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
@@ -63,8 +63,8 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.gender AS gender,
                p.status AS status,
                p.health_status AS healthStatus,
-               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
-                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
@@ -129,8 +129,8 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.gender AS gender,
                p.status AS status,
                p.health_status AS healthStatus,
-               (SELECT mf.url FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
-                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imageUrl,
+               (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,

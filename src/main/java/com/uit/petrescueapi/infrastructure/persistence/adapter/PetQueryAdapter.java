@@ -74,6 +74,10 @@ public class PetQueryAdapter implements PetQueryDataPort {
     // ── Projection → DTO mappers ────────────────
 
     private PetSummaryResponseDto toSummaryDto(PetSummaryProjection p) {
+        String imageUrl = p.getImagePublicId() != null 
+                ? cloudStoragePort.buildUrl(p.getImagePublicId()) 
+                : null;
+        
         return PetSummaryResponseDto.builder()
                 .petId(p.getId())
                 .name(p.getName())
@@ -85,7 +89,7 @@ public class PetQueryAdapter implements PetQueryDataPort {
                 .gender(p.getGender())
                 .status(p.getStatus())
                 .healthStatus(p.getHealthStatus())
-                .imageUrl(p.getImageUrl())
+                .imageUrl(imageUrl)
                 .organization(p.getOrganizationId() != null ? OrganizationMinimalDto.builder()
                         .organizationId(p.getOrganizationId())
                         .name(p.getOrganizationName())

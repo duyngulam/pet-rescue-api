@@ -21,7 +21,7 @@ public interface PetSummaryProjection {
     Gender getGender();
     PetStatus getStatus();
     HealthStatus getHealthStatus();
-    String getImageUrl();
+    String getImagePublicId();
 
     // ── Organization fields (for nested OrganizationMinimalDto) ─
     UUID getOrganizationId();

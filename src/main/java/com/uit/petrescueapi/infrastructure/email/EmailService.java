@@ -27,6 +27,9 @@ public class EmailService {
     @Value("${app.email.verification-url:http://localhost:8080/api/v1/auth/verify-email}")
     private String verificationBaseUrl;
 
+    @Value("${app.email.password-reset-url:http://localhost:3000/reset-password}")
+    private String passwordResetBaseUrl;
+
     /**
      * Send verification email asynchronously.
      */
@@ -60,6 +63,44 @@ public class EmailService {
             log.info("Verification email sent to {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send verification email to {}: {}", to, e.getMessage());
+        }
+    }
+
+    /**
+     * Send password reset email asynchronously.
+     */
+    @Async
+    public void  sendPasswordResetEmail(String to, String username, String token) {
+        String link = passwordResetBaseUrl + "?token=" + token;
+        String subject = "Reset your Pet Rescue password";
+        String body = """
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                  <h2>Password Reset Request</h2>
+                  <p>Hello %s,</p>
+                  <p>We received a request to reset your password. Click the button below to reset it:</p>
+                  <p><a href="%s" style="display:inline-block;padding:12px 24px;background:#FF5722;color:#fff;text-decoration:none;border-radius:4px;">Reset Password</a></p>
+                  <p>Or copy this link into your browser:</p>
+                  <p><code>%s</code></p>
+                  <p><strong>This link expires in 1 hour.</strong></p>
+                  <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+                  <br/>
+                  <p style="color:#888;">— Pet Rescue Team</p>
+                </body>
+                </html>
+                """.formatted(username, link, link);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            mailSender.send(message);
+            log.info("Password reset email sent to {}", to);
+        } catch (MessagingException e) {
+            log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }
     }
 }

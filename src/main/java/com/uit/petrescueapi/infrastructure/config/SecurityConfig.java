@@ -41,6 +41,8 @@ public class SecurityConfig {
             "/api/v1/auth/refresh",
             "/api/v1/auth/verify-email",
             "/api/v1/auth/resend-verification",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
             "/api/v1/dev/**",          // Development-only endpoints (active only with 'dev' profile)
             "/swagger-ui/**",
             "/swagger-ui.html",

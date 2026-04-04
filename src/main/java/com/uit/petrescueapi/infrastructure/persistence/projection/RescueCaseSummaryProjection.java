@@ -13,6 +13,7 @@ public interface RescueCaseSummaryProjection {
 
     UUID getCaseId();
     String getSpecies();
+    String getPriority();
     String getStatus();
     LocalDateTime getReportedAt();
     String getLocationText();

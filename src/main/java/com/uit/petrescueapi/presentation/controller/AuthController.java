@@ -1,9 +1,11 @@
 package com.uit.petrescueapi.presentation.controller;
 
 import com.uit.petrescueapi.application.dto.auth.AuthTokenResponseDto;
+import com.uit.petrescueapi.application.dto.auth.ForgotPasswordRequestDto;
 import com.uit.petrescueapi.application.dto.auth.LoginRequestDto;
 import com.uit.petrescueapi.application.dto.auth.RefreshTokenRequestDto;
 import com.uit.petrescueapi.application.dto.auth.RegisterRequestDto;
+import com.uit.petrescueapi.application.dto.auth.ResetPasswordRequestDto;
 import com.uit.petrescueapi.application.port.command.AuthCommandPort;
 import com.uit.petrescueapi.application.port.query.AuthQueryPort;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
@@ -31,6 +33,8 @@ import org.springframework.web.bind.annotation.*;
  *   <li>POST /refresh</li>
  *   <li>GET  /verify-email</li>
  *   <li>POST /resend-verification</li>
+ *   <li>POST /forgot-password</li>
+ *   <li>POST /reset-password</li>
  * </ul>
  *
  * <p>Protected endpoints (JWT required):
@@ -87,6 +91,20 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestParam String email) {
         authCommandPort.resendVerificationEmail(email);
         return ResponseEntity.ok(ApiResponse.ok(null, "Verification email sent"));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request password reset", description = "Sends a password reset email with one-time token")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto req) {
+        authCommandPort.forgotPassword(req.getEmail());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Password reset email sent"));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using token", description = "Uses the one-time token from email to set a new password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequestDto req) {
+        authCommandPort.resetPassword(req.getToken(), req.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Password reset successfully"));
     }
 
     // ── Protected endpoints ─────────────────────

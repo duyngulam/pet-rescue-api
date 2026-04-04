@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.domain.entity;
 
 import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -25,7 +26,7 @@ public class RescueCase extends BaseEntity {
     private String species;
     private String color;
     private String size;
-    private String condition;
+    private RescuePriority priority;
     private String description;
     private Double latitude;
     private Double longitude;

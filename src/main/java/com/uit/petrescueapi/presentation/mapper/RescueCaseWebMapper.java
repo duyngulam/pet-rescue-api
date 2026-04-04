@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface RescueCaseWebMapper {
     @Mapping(target = "caseId", source = "caseId")
     @Mapping(target = "status", expression = "java(rc.getStatus() != null ? rc.getStatus().name() : null)")
+    @Mapping(target = "priority", source = "priority")
     @Mapping(target = "reportedBy", source = "reportedBy")
     @Mapping(target = "petId", source = "petId")
     @Mapping(target = "organizationId", source = "organizationId")

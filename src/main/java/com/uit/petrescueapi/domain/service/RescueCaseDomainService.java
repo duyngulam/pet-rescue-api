@@ -111,7 +111,7 @@ public class RescueCaseDomainService {
         if (source.getSpecies() != null)      target.setSpecies(source.getSpecies());
         if (source.getColor() != null)        target.setColor(source.getColor());
         if (source.getSize() != null)         target.setSize(source.getSize());
-        if (source.getCondition() != null)    target.setCondition(source.getCondition());
+        if (source.getPriority() != null)     target.setPriority(source.getPriority());
         if (source.getDescription() != null)  target.setDescription(source.getDescription());
         if (source.getLatitude() != null)     target.setLatitude(source.getLatitude());
         if (source.getLongitude() != null)    target.setLongitude(source.getLongitude());

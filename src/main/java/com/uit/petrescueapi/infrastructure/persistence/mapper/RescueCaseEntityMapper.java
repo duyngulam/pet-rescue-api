@@ -2,6 +2,7 @@ package com.uit.petrescueapi.infrastructure.persistence.mapper;
 
 import com.uit.petrescueapi.domain.entity.RescueCase;
 import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import com.uit.petrescueapi.infrastructure.persistence.entity.RescueCaseJpaEntity;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -24,12 +25,14 @@ public interface RescueCaseEntityMapper {
     @Mapping(target = "latitude", source = "location", qualifiedByName = "pointToLat")
     @Mapping(target = "longitude", source = "location", qualifiedByName = "pointToLng")
     @Mapping(target = "status", source = "status", qualifiedByName = "stringToStatus")
+    @Mapping(target = "priority", source = "priority", qualifiedByName = "stringToPriority")
     @Mapping(target = "reportedAt", source = "reportedAt", qualifiedByName = "offsetToLocal")
     @Mapping(target = "resolvedAt", source = "resolvedAt", qualifiedByName = "offsetToLocal")
     RescueCase toDomain(RescueCaseJpaEntity entity);
 
     @Mapping(target = "location", source = ".", qualifiedByName = "latLngToPoint")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
+    @Mapping(target = "priority", source = "priority", qualifiedByName = "priorityToString")
     @Mapping(target = "reportedAt", source = "reportedAt", qualifiedByName = "localToOffset")
     @Mapping(target = "resolvedAt", source = "resolvedAt", qualifiedByName = "localToOffset")
     @Mapping(target = "reporter", ignore = true)
@@ -63,6 +66,16 @@ public interface RescueCaseEntityMapper {
     @Named("statusToString")
     default String statusToString(RescueCaseStatus s) {
         return s == null ? null : s.name();
+    }
+
+    @Named("stringToPriority")
+    default RescuePriority stringToPriority(String s) {
+        return s == null ? null : RescuePriority.valueOf(s);
+    }
+
+    @Named("priorityToString")
+    default String priorityToString(RescuePriority p) {
+        return p == null ? null : p.name();
     }
 
     @Named("offsetToLocal")

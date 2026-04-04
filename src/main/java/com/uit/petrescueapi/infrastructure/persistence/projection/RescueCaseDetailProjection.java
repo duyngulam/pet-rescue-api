@@ -14,6 +14,7 @@ public interface RescueCaseDetailProjection {
     // ── Summary fields ───────────────────────────
     UUID getCaseId();
     String getSpecies();
+    String getPriority();
     String getStatus();
     LocalDateTime getReportedAt();
     String getLocationText();
@@ -27,7 +28,6 @@ public interface RescueCaseDetailProjection {
     String getPetName();
     String getColor();
     String getSize();
-    String getCondition();
     String getDescription();
     Double getLocationLat();
     Double getLocationLng();

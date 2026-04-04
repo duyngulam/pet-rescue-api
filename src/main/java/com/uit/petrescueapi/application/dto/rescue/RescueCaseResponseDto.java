@@ -1,5 +1,6 @@
 package com.uit.petrescueapi.application.dto.rescue;
 
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -26,7 +27,8 @@ public class RescueCaseResponseDto {
     private String species;
     private String color;
     private String size;
-    private String condition;
+    @Schema(description = "Priority level", example = "HIGH")
+    private RescuePriority priority;
     private String description;
     @Schema(example = "IN_PROGRESS", allowableValues = {"REPORTED", "IN_PROGRESS", "RESCUED", "CLOSED"})
     private String status;

@@ -3,6 +3,7 @@ package com.uit.petrescueapi.infrastructure.persistence.repository;
 import com.uit.petrescueapi.infrastructure.persistence.entity.RescueCaseJpaEntity;
 import com.uit.petrescueapi.infrastructure.persistence.projection.RescueCaseDetailProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.RescueCaseSummaryProjection;
+import com.uit.petrescueapi.infrastructure.persistence.projection.RescueMapMarkerProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +37,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
     @Query(value = """
         SELECT rc.caseId       AS caseId,
                rc.species      AS species,
+               rc.priority     AS priority,
                rc.status       AS status,
                rc.reportedAt   AS reportedAt,
                rc.locationText AS locationText,
@@ -51,6 +54,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
     @Query("""
         SELECT rc.caseId        AS caseId,
                rc.species       AS species,
+               rc.priority      AS priority,
                rc.status        AS status,
                rc.reportedAt    AS reportedAt,
                rc.locationText  AS locationText,
@@ -62,7 +66,6 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
                p.name           AS petName,
                rc.color         AS color,
                rc.size          AS size,
-               rc.condition     AS condition,
                rc.description   AS description,
                CAST(NULL AS double) AS locationLat,
                CAST(NULL AS double) AS locationLng,
@@ -82,6 +85,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
     @Query(value = """
         SELECT rc.case_id AS caseId,
                rc.species AS species,
+               rc.priority AS priority,
                rc.status AS status,
                rc.reported_at AS reportedAt,
                rc.location_text AS locationText,
@@ -111,6 +115,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
     @Query(value = """
         SELECT rc.case_id AS caseId,
                rc.species AS species,
+               rc.priority AS priority,
                rc.status AS status,
                rc.reported_at AS reportedAt,
                rc.location_text AS locationText,
@@ -133,4 +138,74 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
             @Param("maxLng") double maxLng,
             @Param("maxLat") double maxLat,
             Pageable pageable);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // MAP MARKER QUERIES - Ultra-optimized for fast map rendering
+    // No JOINs, minimal columns, uses spatial index
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Find all markers in bounding box - optimized for map display.
+     * Uses GiST spatial index for fast bbox filtering.
+     * Returns only essential fields (~100 bytes per marker).
+     */
+    @Query(value = """
+        SELECT rc.case_id AS caseId,
+               ST_Y(rc.location) AS latitude,
+               ST_X(rc.location) AS longitude,
+               rc.priority AS priority,
+               rc.status AS status,
+               rc.species AS species,
+               rc.reported_at AS reportedAt
+        FROM rescue_cases rc
+        WHERE rc.is_deleted = false
+          AND rc.location IS NOT NULL
+          AND ST_Within(rc.location, ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326))
+        ORDER BY rc.reported_at DESC
+        LIMIT 500
+    """, nativeQuery = true)
+    List<RescueMapMarkerProjection> findMarkersInBounds(
+            @Param("minLng") double minLng,
+            @Param("minLat") double minLat,
+            @Param("maxLng") double maxLng,
+            @Param("maxLat") double maxLat);
+
+    /**
+     * Find markers with filters - for filtered map views.
+     * All filters are optional (NULL = no filter).
+     */
+    @Query(value = """
+        SELECT rc.case_id AS caseId,
+               ST_Y(rc.location) AS latitude,
+               ST_X(rc.location) AS longitude,
+               rc.priority AS priority,
+               rc.status AS status,
+               rc.species AS species,
+               rc.reported_at AS reportedAt
+        FROM rescue_cases rc
+        WHERE rc.is_deleted = false
+          AND rc.location IS NOT NULL
+          AND ST_Within(rc.location, ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326))
+          AND (:status IS NULL OR rc.status = :status)
+          AND (:priority IS NULL OR rc.priority = :priority)
+          AND (:species IS NULL OR rc.species = :species)
+        ORDER BY 
+          CASE rc.priority
+            WHEN 'CRITICAL' THEN 1
+            WHEN 'HIGH' THEN 2
+            WHEN 'NORMAL' THEN 3
+            WHEN 'LOW' THEN 4
+            ELSE 5
+          END,
+          rc.reported_at DESC
+        LIMIT 500
+    """, nativeQuery = true)
+    List<RescueMapMarkerProjection> findMarkersWithFilters(
+            @Param("minLng") double minLng,
+            @Param("minLat") double minLat,
+            @Param("maxLng") double maxLng,
+            @Param("maxLat") double maxLat,
+            @Param("status") String status,
+            @Param("priority") String priority,
+            @Param("species") String species);
 }

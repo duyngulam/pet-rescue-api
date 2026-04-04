@@ -1,5 +1,6 @@
 package com.uit.petrescueapi.application.dto.rescue;
 
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import lombok.*;
 
 import java.util.UUID;
@@ -18,7 +19,7 @@ public class CreateRescueCaseRequestDto {
     private String species;
     private String color;
     private String size;
-    private String condition;
+    private RescuePriority priority;
     private String description;
     private Double latitude;
     private Double longitude;

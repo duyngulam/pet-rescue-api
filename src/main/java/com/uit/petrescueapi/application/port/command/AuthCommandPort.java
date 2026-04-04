@@ -26,6 +26,12 @@ public interface AuthCommandPort {
     /** Re-send verification email. */
     void resendVerificationEmail(String email);
 
+    /** Send password reset email with one-time token. */
+    void forgotPassword(String email);
+
+    /** Reset password using token and new password. */
+    void resetPassword(String token, String newPassword);
+
     /** Revoke all refresh tokens for the current user (logout). */
     void logout(String userId);
 }

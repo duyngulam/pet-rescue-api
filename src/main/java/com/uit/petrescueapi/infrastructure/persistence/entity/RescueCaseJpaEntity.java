@@ -3,8 +3,6 @@ package com.uit.petrescueapi.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 
 import java.time.OffsetDateTime;
@@ -16,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "rescue_cases", indexes = {
         @Index(name = "idx_rescue_status", columnList = "status"),
+        @Index(name = "idx_rescue_priority", columnList = "priority"),
         @Index(name = "idx_rescue_species", columnList = "species"),
         @Index(name = "idx_rescue_reported_at", columnList = "reported_at")
 })
@@ -48,8 +47,8 @@ public class RescueCaseJpaEntity extends BaseJpaEntity {
     @Column(name = "size", length = 50)
     private String size;
 
-    @Column(name = "condition", length = 50)
-    private String condition;
+    @Column(name = "priority", length = 50)
+    private String priority;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;

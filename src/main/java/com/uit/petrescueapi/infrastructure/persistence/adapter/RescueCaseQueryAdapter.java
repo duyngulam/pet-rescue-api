@@ -2,10 +2,14 @@ package com.uit.petrescueapi.infrastructure.persistence.adapter;
 
 import com.uit.petrescueapi.application.dto.rescue.RescueCaseResponseDto;
 import com.uit.petrescueapi.application.dto.rescue.RescueCaseSummaryResponseDto;
+import com.uit.petrescueapi.application.dto.rescue.RescueMapMarkerDto;
 import com.uit.petrescueapi.application.port.out.RescueCaseQueryDataPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import com.uit.petrescueapi.infrastructure.persistence.projection.RescueCaseDetailProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.RescueCaseSummaryProjection;
+import com.uit.petrescueapi.infrastructure.persistence.projection.RescueMapMarkerProjection;
 import com.uit.petrescueapi.infrastructure.persistence.repository.RescueCaseQueryJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -60,13 +65,45 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
         return toResponseDto(proj);
     }
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // MAP MARKER QUERIES - Ultra-optimized for fast map rendering
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public List<RescueMapMarkerDto> findMarkersInBounds(double minLat, double minLng,
+                                                         double maxLat, double maxLng) {
+        // Port passes (minLat, minLng, maxLat, maxLng) but repo expects (minLng, minLat, maxLng, maxLat)
+        return queryRepo.findMarkersInBounds(minLng, minLat, maxLng, maxLat)
+                .stream()
+                .map(this::toMarkerDto)
+                .toList();
+    }
+
+    @Override
+    public List<RescueMapMarkerDto> findMarkersWithFilters(double minLat, double minLng,
+                                                            double maxLat, double maxLng,
+                                                            RescueCaseStatus status,
+                                                            RescuePriority priority,
+                                                            String species) {
+        String statusStr = status != null ? status.name() : null;
+        String priorityStr = priority != null ? priority.name() : null;
+        
+        return queryRepo.findMarkersWithFilters(minLng, minLat, maxLng, maxLat, statusStr, priorityStr, species)
+                .stream()
+                .map(this::toMarkerDto)
+                .toList();
+    }
+
     // ── Projection → DTO mappers ────────────────
 
     private RescueCaseSummaryResponseDto toSummaryDto(RescueCaseSummaryProjection p) {
         return RescueCaseSummaryResponseDto.builder()
                 .caseId(p.getCaseId())
+                .species(p.getSpecies())
+                .priority(p.getPriority() != null ? RescuePriority.valueOf(p.getPriority()) : null)
                 .status(p.getStatus())
                 .reporterUsername(p.getReporterUsername())
+                .locationText(p.getLocationText())
                 .reportedAt(p.getReportedAt())
                 .build();
     }
@@ -83,7 +120,7 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
                 .species(p.getSpecies())
                 .color(p.getColor())
                 .size(p.getSize())
-                .condition(p.getCondition())
+                .priority(p.getPriority() != null ? RescuePriority.valueOf(p.getPriority()) : null)
                 .description(p.getDescription())
                 .status(p.getStatus())
                 .latitude(p.getLocationLat())
@@ -93,6 +130,18 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
                 .provinceName(p.getProvinceName())
                 .reportedAt(p.getReportedAt())
                 .resolvedAt(p.getResolvedAt())
+                .build();
+    }
+
+    private RescueMapMarkerDto toMarkerDto(RescueMapMarkerProjection p) {
+        return RescueMapMarkerDto.builder()
+                .caseId(p.getCaseId())
+                .latitude(p.getLatitude())
+                .longitude(p.getLongitude())
+                .priority(p.getPriority() != null ? RescuePriority.valueOf(p.getPriority()) : null)
+                .status(p.getStatus() != null ? RescueCaseStatus.valueOf(p.getStatus()) : null)
+                .species(p.getSpecies())
+                .reportedAt(p.getReportedAt())
                 .build();
     }
 }

@@ -7,6 +7,7 @@ import com.uit.petrescueapi.application.dto.auth.RegisterRequestDto;
 import com.uit.petrescueapi.application.dto.user.UserResponseDto;
 import com.uit.petrescueapi.application.port.command.AuthCommandPort;
 import com.uit.petrescueapi.domain.entity.EmailVerificationToken;
+import com.uit.petrescueapi.domain.entity.PasswordResetToken;
 import com.uit.petrescueapi.domain.entity.RefreshToken;
 import com.uit.petrescueapi.domain.entity.User;
 import com.uit.petrescueapi.domain.exception.BusinessException;
@@ -51,6 +52,9 @@ public class AuthCommandUseCase implements AuthCommandPort {
 
     @Value("${app.email.verification-token-expiry-minutes:1440}")
     private long verificationTokenExpiryMinutes;
+
+    @Value("${app.email.password-reset-token-expiry-minutes:60}")
+    private long passwordResetTokenExpiryMinutes;
 
     // ── Register ────────────────────────────────
 
@@ -157,6 +161,25 @@ public class AuthCommandUseCase implements AuthCommandPort {
         User user = authDomainService.findByEmail(email);
         emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), token.getToken());
         log.info("Resent verification email to {}", email);
+    }
+
+    // ── Password Reset ──────────────────────────
+
+    @Override
+    public void forgotPassword(String email) {
+        var user = authDomainService.findByEmail(email);
+        var token = authDomainService.createPasswordResetTokenByEmail(email, passwordResetTokenExpiryMinutes);
+
+        emailService.sendPasswordResetEmail(email,user.getFullName(), token.getToken());
+        log.info("Password reset email sent to {}", email);
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        User user = authDomainService.verifyPasswordResetToken(token);
+        authDomainService.resetPassword(user.getId(), hashedPassword);
+        log.info("Password reset completed for user {}", user.getEmail());
     }
 
     // ── Logout ──────────────────────────────────

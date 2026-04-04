@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.domain.service;
 
 import com.uit.petrescueapi.domain.entity.EmailVerificationToken;
+import com.uit.petrescueapi.domain.entity.PasswordResetToken;
 import com.uit.petrescueapi.domain.entity.RefreshToken;
 import com.uit.petrescueapi.domain.entity.Role;
 import com.uit.petrescueapi.domain.entity.User;
@@ -9,6 +10,7 @@ import com.uit.petrescueapi.domain.exception.ResourceAlreadyExistsException;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.exception.UnauthorizedException;
 import com.uit.petrescueapi.domain.repository.EmailVerificationTokenRepository;
+import com.uit.petrescueapi.domain.repository.PasswordResetTokenRepository;
 import com.uit.petrescueapi.domain.repository.RefreshTokenRepository;
 import com.uit.petrescueapi.domain.repository.RoleRepository;
 import com.uit.petrescueapi.domain.repository.UserRepository;
@@ -32,6 +34,7 @@ import java.util.UUID;
  *   <li>Validate uniqueness of email / username</li>
  *   <li>Assign default role on registration</li>
  *   <li>Email-verification flow (create token → verify)</li>
+ *   <li>Password-reset flow (create token → verify → reset)</li>
  *   <li>Refresh-token lifecycle (create / rotate / revoke)</li>
  * </ul>
  *
@@ -48,6 +51,7 @@ public class AuthDomainService {
     private final RoleRepository roleRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationTokenRepository verificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     // ── Registration ────────────────────────────
 
@@ -206,5 +210,64 @@ public class AuthDomainService {
         // Try username
         return userRepository.findByUsername(emailOrUsername)
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
+    }
+
+    // ── Password reset ──────────────────────────
+
+    /**
+     * Create a one-time password reset token for the given user.
+     */
+    public PasswordResetToken createPasswordResetToken(UUID userId, long expiryMinutes) {
+        PasswordResetToken token = PasswordResetToken.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .token(UUID.randomUUID().toString())
+                .expiresAt(LocalDateTime.now().plusMinutes(expiryMinutes))
+                .used(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return passwordResetTokenRepository.save(token);
+    }
+
+    /**
+     * Validate password reset token and return the associated user.
+     * Marks token as used to prevent replay attacks.
+     */
+    public User verifyPasswordResetToken(String rawToken) {
+        PasswordResetToken token = passwordResetTokenRepository.findByToken(rawToken)
+                .orElseThrow(() -> new BusinessException("Invalid password reset token"));
+
+        if (!token.isUsable()) {
+            throw new BusinessException("Password reset token is expired or already used");
+        }
+
+        token.markUsed();
+        passwordResetTokenRepository.save(token);
+
+        return userRepository.findById(token.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", token.getUserId()));
+    }
+
+    /**
+     * Reset password for a user (password is expected to be pre-hashed by the caller).
+     */
+    public User resetPassword(UUID userId, String hashedPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
+        user.resetPassword(hashedPassword);
+        user.setUpdatedAt(LocalDateTime.now());
+        
+        log.info("Password reset for user {}", user.getEmail());
+        return userRepository.save(user);
+    }
+
+    /**
+     * Create reset token for a given email (throws if email doesn't exist).
+     */
+    public PasswordResetToken createPasswordResetTokenByEmail(String email, long expiryMinutes) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+        return createPasswordResetToken(user.getId(), expiryMinutes);
     }
 }

@@ -1,8 +1,9 @@
 package com.uit.petrescueapi.domain.valueobject;
 
 /**
- * Condition of the animal when a rescue case is reported.
+ * @deprecated Use {@link RescuePriority} instead.
  */
+@Deprecated(forRemoval = true)
 public enum RescueCaseCondition {
     CRITICAL,
     INJURED,

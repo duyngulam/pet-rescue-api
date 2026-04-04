@@ -3,6 +3,8 @@ package com.uit.petrescueapi.presentation.controller;
 import com.uit.petrescueapi.application.dto.rescue.*;
 import com.uit.petrescueapi.application.port.command.RescueCaseCommandPort;
 import com.uit.petrescueapi.application.port.query.RescueCaseQueryPort;
+import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
+import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
 import com.uit.petrescueapi.presentation.dto.PageResponse;
 import com.uit.petrescueapi.presentation.mapper.RescueCaseWebMapper;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -93,5 +96,32 @@ public class RescueCaseController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(queryPort.findWithinBoundingBox(minLat, minLng, maxLat, maxLng, PageRequest.of(page, size)))));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // MAP MARKER ENDPOINTS - Ultra-fast for real-time map rendering
+    // Returns lightweight markers (no pagination - limited to 500 per request)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/map/markers")
+    @Operation(summary = "Get map markers in bounding box",
+            description = "Ultra-lightweight endpoint for map rendering. Returns up to 500 markers with minimal data (~100 bytes each).")
+    public ResponseEntity<ApiResponse<List<RescueMapMarkerDto>>> getMapMarkers(
+            @RequestParam double minLat,
+            @RequestParam double minLng,
+            @RequestParam double maxLat,
+            @RequestParam double maxLng,
+            @RequestParam(required = false) RescueCaseStatus status,
+            @RequestParam(required = false) RescuePriority priority,
+            @RequestParam(required = false) String species) {
+        
+        List<RescueMapMarkerDto> markers;
+        if (status == null && priority == null && species == null) {
+            markers = queryPort.findMarkersInBounds(minLat, minLng, maxLat, maxLng);
+        } else {
+            markers = queryPort.findMarkersWithFilters(minLat, minLng, maxLat, maxLng, status, priority, species);
+        }
+        
+        return ResponseEntity.ok(ApiResponse.ok(markers));
     }
 }

@@ -51,6 +51,9 @@ public class User {
         this.status = UserStatus.ACTIVE;
         this.updatedAt = LocalDateTime.now();
     }
+    public void resetPassword(String hashedPassword) {
+        this.passwordHash  = hashedPassword;
+    }
 
     public void deactivate() {
         this.status = UserStatus.INACTIVE;

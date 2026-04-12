@@ -28,13 +28,8 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
     private final OrganizationMemberJpaRepository memberRepo;
 
     @Override
-    public Page<OrganizationSummaryResponseDto> findAllSummary(Pageable pageable) {
-        return queryRepo.findAllSummary(pageable).map(this::toSummaryDto);
-    }
-
-    @Override
-    public Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable) {
-        return queryRepo.findByStatus(status, pageable).map(this::toSummaryDto);
+    public Page<OrganizationSummaryResponseDto> findAllSummary(OrganizationStatus status, Pageable pageable) {
+        return queryRepo.findAllSummary(status, pageable).map(this::toSummaryDto);
     }
 
     @Override

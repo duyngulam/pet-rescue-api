@@ -23,6 +23,8 @@ public interface PostEntityMapper {
     @Mapping(target = "tags", ignore = true)
     @Mapping(target = "author", ignore = true)
     @Mapping(target = "rescueCase", ignore = true)
+    @Mapping(target = "likeCount", ignore = true)
+    @Mapping(target = "commentCount", ignore = true)
     PostJpaEntity toEntity(Post domain);
 
     List<Post> toDomainList(List<PostJpaEntity> entities);

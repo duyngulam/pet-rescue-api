@@ -26,24 +26,10 @@ public interface OrganizationQueryJpaRepository extends JpaRepository<Organizati
                    o.phone          AS phone,
                    o.email          AS email
             FROM OrganizationJpaEntity o
-            WHERE o.status = 'ACTIVE'
+            WHERE (:status IS NULL AND o.status = 'ACTIVE')
+               OR (:status IS NOT NULL AND o.status = :status)
             """)
-    Page<OrganizationSummaryProjection> findAllSummary(Pageable pageable);
-
-    @Query("""
-            SELECT o.organizationId AS organizationId,
-                   o.name           AS name,
-                   o.type           AS type,
-                   o.status         AS status,
-                   o.streetAddress  AS street_address,
-                   o.wardName       AS ward_name,
-                   o.provinceName   AS province_name,
-                   o.phone          AS phone,
-                   o.email          AS email
-            FROM OrganizationJpaEntity o
-            WHERE o.status = :status
-            """)
-    Page<OrganizationSummaryProjection> findByStatus(@Param("status") OrganizationStatus status, Pageable pageable);
+    Page<OrganizationSummaryProjection> findAllSummary(@Param("status") OrganizationStatus status, Pageable pageable);
 
     @Query(value = """
             SELECT o.organization_id     AS organizationId,

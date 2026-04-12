@@ -37,6 +37,14 @@ public class PostJpaEntity extends BaseJpaEntity {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "like_count", nullable = false)
+    @Builder.Default
+    private Integer likeCount = 0;
+
+    @Column(name = "comment_count", nullable = false)
+    @Builder.Default
+    private Integer commentCount = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", insertable = false, updatable = false)
     private UserJpaEntity author;

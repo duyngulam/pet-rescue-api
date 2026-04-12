@@ -19,9 +19,7 @@ public interface OrganizationQueryPort {
 
     OrganizationResponseDto findById(UUID organizationId);
 
-    Page<OrganizationSummaryResponseDto> findAll(Pageable pageable);
-
-    Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable);
+    Page<OrganizationSummaryResponseDto> findAll(OrganizationStatus status, Pageable pageable);
 
     Page<OrganizationMemberResponseDto> findMembers(UUID organizationId, Pageable pageable);
 }

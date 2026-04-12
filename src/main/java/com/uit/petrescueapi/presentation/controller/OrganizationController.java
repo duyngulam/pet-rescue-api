@@ -137,41 +137,13 @@ public class OrganizationController {
     }
 
     @GetMapping
-    @Operation(summary = "List all active organizations (paginated)")
+    @Operation(summary = "List organizations (paginated, optional status filter)")
     public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getAll(
+            @RequestParam(required = false) OrganizationStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
-    }
-
-    @GetMapping("/active")
-    @Operation(summary = "List active organizations (public)")
-    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getActive(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findByStatus(OrganizationStatus.ACTIVE, PageRequest.of(page, size)))));
-    }
-
-    @GetMapping("/pending")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "List pending organizations (ADMIN only)")
-    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getPending(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findByStatus(OrganizationStatus.PENDING, PageRequest.of(page, size)))));
-    }
-
-    @GetMapping("/inactive")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "List inactive organizations (ADMIN only)")
-    public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getInactive(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findByStatus(OrganizationStatus.INACTIVE, PageRequest.of(page, size)))));
+                PageResponse.from(queryPort.findAll(status, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/{id}/members")

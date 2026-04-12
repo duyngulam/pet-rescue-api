@@ -35,13 +35,8 @@ public class OrganizationQueryUseCase implements OrganizationQueryPort {
     }
 
     @Override
-    public Page<OrganizationSummaryResponseDto> findAll(Pageable pageable) {
-        return queryDataPort.findAllSummary(pageable);
-    }
-
-    @Override
-    public Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable) {
-        return queryDataPort.findByStatus(status, pageable);
+    public Page<OrganizationSummaryResponseDto> findAll(OrganizationStatus status, Pageable pageable) {
+        return queryDataPort.findAllSummary(status, pageable);
     }
 
     @Override

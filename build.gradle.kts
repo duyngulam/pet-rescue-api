@@ -33,6 +33,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
+    // Event-Driven Architecture
+    implementation("org.springframework.boot:spring-boot-starter-amqp")        // RabbitMQ
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")  // Redis
+    implementation("org.springframework.boot:spring-boot-starter-batch")       // Spring Batch
+    implementation("org.springframework.boot:spring-boot-starter-websocket")   // WebSocket notifications
+
     // Flyway (managed by Spring dependency-management)
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")

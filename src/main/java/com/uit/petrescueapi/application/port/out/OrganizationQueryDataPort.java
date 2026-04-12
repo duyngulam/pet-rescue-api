@@ -15,8 +15,7 @@ import java.util.UUID;
  * Implemented by the infrastructure query adapter.
  */
 public interface OrganizationQueryDataPort {
-    Page<OrganizationSummaryResponseDto> findAllSummary(Pageable pageable);
-    Page<OrganizationSummaryResponseDto> findByStatus(OrganizationStatus status, Pageable pageable);
+    Page<OrganizationSummaryResponseDto> findAllSummary(OrganizationStatus status, Pageable pageable);
     Optional<OrganizationResponseDto> findById(UUID id);
     Page<OrganizationMemberResponseDto> findMembers(UUID organizationId, Pageable pageable);
 }

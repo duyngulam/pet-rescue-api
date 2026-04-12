@@ -30,7 +30,10 @@ public class PostController {
     private final PostWebMapper mapper;
 
     @PostMapping
-    @Operation(summary = "Create a new post")
+    @Operation(
+            summary = "Create a new post",
+            description = "Creates a community post for the authenticated user."
+    )
     public ResponseEntity<ApiResponse<PostResponseDto>> create(
             @Valid @RequestBody CreatePostRequestDto cmd,
             Authentication authentication) {
@@ -40,7 +43,10 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update a post")
+    @Operation(
+            summary = "Update a post",
+            description = "Updates mutable post fields such as content and media."
+    )
     public ResponseEntity<ApiResponse<PostResponseDto>> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdatePostRequestDto cmd) {
@@ -48,20 +54,29 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a post")
+    @Operation(
+            summary = "Delete a post",
+            description = "Soft-deletes a post by id."
+    )
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         commandPort.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get post by ID")
+    @Operation(
+            summary = "Get post by ID",
+            description = "Returns post detail including author, media, and tags."
+    )
     public ResponseEntity<ApiResponse<PostResponseDto>> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(queryPort.findById(id)));
     }
 
     @GetMapping
-    @Operation(summary = "List all posts")
+    @Operation(
+            summary = "List posts",
+            description = "Returns paginated post summaries."
+    )
     public ResponseEntity<ApiResponse<PageResponse<PostSummaryResponseDto>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

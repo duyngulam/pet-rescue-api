@@ -1,5 +1,5 @@
 # ==========================================================
-# PRODUCTION — App only, connects to NeonDB (external Postgres)
+# PRODUCTION — App + Redis + RabbitMQ, connects to NeonDB (external Postgres)
 # No PostgreSQL container — database is managed by NeonDB.
 #
 # Usage:  docker-compose -f docker-compose.prod.yml up -d
@@ -7,9 +7,44 @@
 # ==========================================================
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: petrescue-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: petrescue-rabbitmq
+    ports:
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-petrescue}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-petrescue}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   app:
     image: ${IMAGE_TAG:-petrescue-api:latest}
     container_name: petrescue-api
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "${PORT:-8080}:8080"
     environment:
@@ -31,6 +66,20 @@ services:
 
       # ── CORS ───────────────────────────────────
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-https://pet-rescue-community.vercel.app}
+
+      # ── Redis (Docker service) ───────────────────
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:}
+      REDIS_SSL_ENABLED: "false"
+
+      # ── RabbitMQ (Docker service) ────────────────
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-petrescue}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-petrescue}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:/}
+      RABBITMQ_SSL_ENABLED: "false"
 
       # ── Email verification ─────────────────────
       EMAIL_FROM: ${EMAIL_FROM}
@@ -54,3 +103,7 @@ services:
       resources:
         limits:
           memory: 512M
+
+volumes:
+  redis-data:
+  rabbitmq-data:

@@ -30,4 +30,7 @@ public class PetsCurrentOwnerJpaEntity {
 
     @Column(name = "owner_id")
     private UUID ownerId;
+
+    @Column(name = "caretaker_user_id")
+    private UUID caretakerUserId;
 }

@@ -1,11 +1,13 @@
 package com.uit.petrescueapi.infrastructure.persistence.adapter;
 
 import com.uit.petrescueapi.application.dto.organization.OrganizationMinimalDto;
+import com.uit.petrescueapi.application.dto.pet.PetOwnerSummaryDto;
 import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.CloudStoragePort;
 import com.uit.petrescueapi.application.port.out.PetQueryDataPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
+import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import com.uit.petrescueapi.infrastructure.persistence.projection.PetDetailProjection;
 import com.uit.petrescueapi.infrastructure.persistence.projection.PetSummaryProjection;
 import com.uit.petrescueapi.infrastructure.persistence.repository.PetQueryJpaRepository;
@@ -33,27 +35,71 @@ public class PetQueryAdapter implements PetQueryDataPort {
 
     @Override
     public Page<PetSummaryResponseDto> findAllSummaries(Pageable pageable) {
-        return findAllWithFilters(null, null, null, pageable);
+        return findAllWithFilters(null, null, null, null, null, null, pageable);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findAllWithFilters(String species, String breed, String gender, Pageable pageable) {
-        return queryRepo.findAllWithFilters(species, breed, gender, pageable).map(this::toSummaryDto);
+    public Page<PetSummaryResponseDto> findAllWithFilters(
+            String species,
+            String breed,
+            String gender,
+            PetStatus status,
+            UUID ownerUserId,
+            UUID ownerOrganizationId,
+            Pageable pageable
+    ) {
+        return queryRepo.findAllWithFilters(
+                species, breed, gender, status != null ? status.name() : null, ownerUserId, ownerOrganizationId, pageable
+        ).map(this::toSummaryDto);
     }
 
     @Override
     public Page<PetSummaryResponseDto> findAvailableSummaries(Pageable pageable) {
-        return findAvailableWithFilters(null, null, null, pageable);
+        return findAvailableWithFilters(null, null, null, null, pageable);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findAvailableWithFilters(String species, String breed, String gender, Pageable pageable) {
-        return queryRepo.findAvailableWithFilters(species, breed, gender, pageable).map(this::toSummaryDto);
+    public Page<PetSummaryResponseDto> findAvailableWithFilters(
+            String species,
+            String breed,
+            String gender,
+            UUID ownerOrganizationId,
+            Pageable pageable
+    ) {
+        return queryRepo.findByStatusWithFilters(
+                species,
+                breed,
+                gender,
+                PetStatus.UNOWNED.name(),
+                ownerOrganizationId,
+                pageable
+        ).map(this::toSummaryDto);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findSummariesByOrganizationId(UUID organizationId, Pageable pageable) {
-        return queryRepo.findSummariesByOrganizationId(organizationId, pageable).map(this::toSummaryDto);
+    public Page<PetSummaryResponseDto> findSummariesByOrganizationId(
+            UUID organizationId,
+            String species,
+            String breed,
+            String gender,
+            Pageable pageable
+    ) {
+        return queryRepo.findSummariesByOrganizationId(
+                organizationId, species, breed, gender, pageable
+        ).map(this::toSummaryDto);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findSummariesByUserId(
+            UUID userId,
+            String species,
+            String breed,
+            String gender,
+            Pageable pageable
+    ) {
+        return queryRepo.findSummariesByUserId(
+                userId, species, breed, gender, pageable
+        ).map(this::toSummaryDto);
     }
 
     // ── Detail (single pet) query ───────────────
@@ -89,6 +135,17 @@ public class PetQueryAdapter implements PetQueryDataPort {
                 .gender(p.getGender())
                 .status(p.getStatus())
                 .healthStatus(p.getHealthStatus())
+                .owner(toOwnerDto(
+                        p.getOwnerType(),
+                        p.getOwnerId(),
+                        p.getOwnerName(),
+                        p.getOwnerAvatarUrl(),
+                        p.getOwnerPhone(),
+                        p.getCaretakerUserId(),
+                        p.getCaretakerName(),
+                        p.getCaretakerAvatarUrl(),
+                        p.getCaretakerPhone()
+                ))
                 .imageUrl(imageUrl)
                 .organization(p.getOrganizationId() != null ? OrganizationMinimalDto.builder()
                         .organizationId(p.getOrganizationId())
@@ -113,6 +170,17 @@ public class PetQueryAdapter implements PetQueryDataPort {
                 .gender(p.getGender())
                 .status(p.getStatus())
                 .healthStatus(p.getHealthStatus())
+                .owner(toOwnerDto(
+                        p.getOwnerType(),
+                        p.getOwnerId(),
+                        p.getOwnerName(),
+                        p.getOwnerAvatarUrl(),
+                        p.getOwnerPhone(),
+                        p.getCaretakerUserId(),
+                        p.getCaretakerName(),
+                        p.getCaretakerAvatarUrl(),
+                        p.getCaretakerPhone()
+                ))
                 .organization(p.getOrganizationId() != null ? OrganizationMinimalDto.builder()
                         .organizationId(p.getOrganizationId())
                         .name(p.getOrganizationName())
@@ -131,6 +199,34 @@ public class PetQueryAdapter implements PetQueryDataPort {
                 .shelterId(p.getShelterId())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
+                .build();
+    }
+
+    private PetOwnerSummaryDto toOwnerDto(
+            String ownerType,
+            UUID ownerId,
+            String ownerName,
+            String ownerAvatarUrl,
+            String ownerPhone,
+            UUID caretakerUserId,
+            String caretakerName,
+            String caretakerAvatarUrl,
+            String caretakerPhone
+    ) {
+        if (ownerId == null && ownerType == null) {
+            return null;
+        }
+
+        return PetOwnerSummaryDto.builder()
+                .ownerType(ownerType)
+                .ownerId(ownerId)
+                .name(ownerName)
+                .avatarUrl(ownerAvatarUrl)
+                .phone(ownerPhone)
+                .caretakerUserId(caretakerUserId)
+                .caretakerName(caretakerName)
+                .caretakerAvatarUrl(caretakerAvatarUrl)
+                .caretakerPhone(caretakerPhone)
                 .build();
     }
 

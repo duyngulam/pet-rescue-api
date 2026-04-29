@@ -44,6 +44,7 @@ public class PetSummaryResponseDto {
     private Gender gender;
     private PetStatus status;
     private HealthStatus healthStatus;
+    private PetOwnerSummaryDto owner;
 
     private OrganizationMinimalDto organization;
 

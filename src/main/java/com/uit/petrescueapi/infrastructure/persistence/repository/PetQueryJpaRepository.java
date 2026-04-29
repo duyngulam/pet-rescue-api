@@ -34,6 +34,15 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.health_status AS healthStatus,
                (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
                 WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
+               pco.owner_type AS ownerType,
+               pco.owner_id AS ownerId,
+               COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
+               u.avatar_url AS ownerAvatarUrl,
+               COALESCE(u.phone, own_org.phone) AS ownerPhone,
+               pco.caretaker_user_id AS caretakerUserId,
+               COALESCE(NULLIF(caretaker.full_name, ''), caretaker.username) AS caretakerName,
+               caretaker.avatar_url AS caretakerAvatarUrl,
+               caretaker.phone AS caretakerPhone,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
@@ -41,16 +50,37 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                o.ward_name AS wardName,
                CAST(o.ward_code AS INTEGER) AS wardCode
         FROM pets p
+        LEFT JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        LEFT JOIN users u ON pco.owner_type = 'USER' AND pco.owner_id = u.user_id
+        LEFT JOIN organizations own_org ON pco.owner_type = 'ORGANIZATION' AND pco.owner_id = own_org.organization_id
+        LEFT JOIN users caretaker ON pco.owner_type = 'ORGANIZATION' AND pco.caretaker_user_id = caretaker.user_id
         LEFT JOIN organizations o ON p.shelter_id = o.organization_id
         WHERE p.is_deleted = false
           AND (:species IS NULL OR p.species = :species)
           AND (:breed IS NULL OR p.breed = :breed)
           AND (:gender IS NULL OR p.gender = :gender)
+          AND (:status IS NULL OR p.status = :status)
+          AND (:ownerUserId IS NULL OR (pco.owner_type = 'USER' AND pco.owner_id = :ownerUserId))
+          AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
+    """, countQuery = """
+        SELECT COUNT(p.pet_id)
+        FROM pets p
+        LEFT JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        WHERE p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+          AND (:status IS NULL OR p.status = :status)
+          AND (:ownerUserId IS NULL OR (pco.owner_type = 'USER' AND pco.owner_id = :ownerUserId))
+          AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
     """, nativeQuery = true)
     Page<PetSummaryProjection> findAllWithFilters(
             @Param("species") String species,
             @Param("breed") String breed,
             @Param("gender") String gender,
+            @Param("status") String status,
+            @Param("ownerUserId") UUID ownerUserId,
+            @Param("ownerOrganizationId") UUID ownerOrganizationId,
             Pageable pageable);
 
     @Query(value = """
@@ -65,6 +95,15 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.health_status AS healthStatus,
                (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
                 WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
+               pco.owner_type AS ownerType,
+               pco.owner_id AS ownerId,
+               COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
+               u.avatar_url AS ownerAvatarUrl,
+               COALESCE(u.phone, own_org.phone) AS ownerPhone,
+               pco.caretaker_user_id AS caretakerUserId,
+               COALESCE(NULLIF(caretaker.full_name, ''), caretaker.username) AS caretakerName,
+               caretaker.avatar_url AS caretakerAvatarUrl,
+               caretaker.phone AS caretakerPhone,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
@@ -72,16 +111,34 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                o.ward_name AS wardName,
                CAST(o.ward_code AS INTEGER) AS wardCode
         FROM pets p
+        LEFT JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        LEFT JOIN users u ON pco.owner_type = 'USER' AND pco.owner_id = u.user_id
+        LEFT JOIN organizations own_org ON pco.owner_type = 'ORGANIZATION' AND pco.owner_id = own_org.organization_id
+        LEFT JOIN users caretaker ON pco.owner_type = 'ORGANIZATION' AND pco.caretaker_user_id = caretaker.user_id
         LEFT JOIN organizations o ON p.shelter_id = o.organization_id
-        WHERE p.is_deleted = false AND p.status = 'AVAILABLE'
+        WHERE p.is_deleted = false
           AND (:species IS NULL OR p.species = :species)
           AND (:breed IS NULL OR p.breed = :breed)
           AND (:gender IS NULL OR p.gender = :gender)
+          AND p.status = :status
+          AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
+    """, countQuery = """
+        SELECT COUNT(p.pet_id)
+        FROM pets p
+        LEFT JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        WHERE p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+          AND p.status = :status
+          AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
     """, nativeQuery = true)
-    Page<PetSummaryProjection> findAvailableWithFilters(
+    Page<PetSummaryProjection> findByStatusWithFilters(
             @Param("species") String species,
             @Param("breed") String breed,
             @Param("gender") String gender,
+            @Param("status") String status,
+            @Param("ownerOrganizationId") UUID ownerOrganizationId,
             Pageable pageable);
 
     // ── Detail (single pet) ─────────────────────
@@ -101,10 +158,19 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.is_vaccinated AS vaccinated,
                p.is_neutered AS neutered,
                p.rescue_date AS rescueDate,
-               p.rescue_location AS rescueLocation,
-               p.shelter_id AS shelterId,
-               p.created_at AS createdAt,
-               p.updated_at AS updatedAt,
+                p.rescue_location AS rescueLocation,
+                p.shelter_id AS shelterId,
+                p.created_at AS createdAt,
+                p.updated_at AS updatedAt,
+               pco.owner_type AS ownerType,
+               pco.owner_id AS ownerId,
+               COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
+               u.avatar_url AS ownerAvatarUrl,
+               COALESCE(u.phone, own_org.phone) AS ownerPhone,
+               pco.caretaker_user_id AS caretakerUserId,
+               COALESCE(NULLIF(caretaker.full_name, ''), caretaker.username) AS caretakerName,
+               caretaker.avatar_url AS caretakerAvatarUrl,
+               caretaker.phone AS caretakerPhone,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
@@ -112,6 +178,10 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                o.ward_name AS wardName,
                CAST(o.ward_code AS INTEGER) AS wardCode
         FROM pets p
+        LEFT JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        LEFT JOIN users u ON pco.owner_type = 'USER' AND pco.owner_id = u.user_id
+        LEFT JOIN organizations own_org ON pco.owner_type = 'ORGANIZATION' AND pco.owner_id = own_org.organization_id
+        LEFT JOIN users caretaker ON pco.owner_type = 'ORGANIZATION' AND pco.caretaker_user_id = caretaker.user_id
         LEFT JOIN organizations o ON p.shelter_id = o.organization_id
         WHERE p.is_deleted = false AND p.pet_id = :id
     """, nativeQuery = true)
@@ -131,22 +201,106 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.health_status AS healthStatus,
                (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
                 WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
+               pco.owner_type AS ownerType,
+               pco.owner_id AS ownerId,
+               COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
+               u.avatar_url AS ownerAvatarUrl,
+               COALESCE(u.phone, own_org.phone) AS ownerPhone,
+               pco.caretaker_user_id AS caretakerUserId,
+               COALESCE(NULLIF(caretaker.full_name, ''), caretaker.username) AS caretakerName,
+               caretaker.avatar_url AS caretakerAvatarUrl,
+               caretaker.phone AS caretakerPhone,
                o.organization_id AS organizationId,
                o.name AS organizationName,
                o.province_name AS provinceName,
                CAST(o.province_code AS INTEGER) AS provinceCode,
                o.ward_name AS wardName,
                CAST(o.ward_code AS INTEGER) AS wardCode
-        FROM pet_ownerships po
-        JOIN pets p ON po.pet_id = p.pet_id
+        FROM pets p
+        JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        LEFT JOIN users u ON pco.owner_type = 'USER' AND pco.owner_id = u.user_id
+        LEFT JOIN organizations own_org ON pco.owner_type = 'ORGANIZATION' AND pco.owner_id = own_org.organization_id
+        LEFT JOIN users caretaker ON pco.owner_type = 'ORGANIZATION' AND pco.caretaker_user_id = caretaker.user_id
         LEFT JOIN organizations o ON p.shelter_id = o.organization_id
-        WHERE po.owner_id = :organizationId
-          AND po.owner_type = 'ORGANIZATION'
-          AND po.to_time IS NULL
+        WHERE pco.owner_id = :organizationId
+          AND pco.owner_type = 'ORGANIZATION'
           AND p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+    """, countQuery = """
+        SELECT COUNT(p.pet_id)
+        FROM pets p
+        JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        WHERE pco.owner_id = :organizationId
+          AND pco.owner_type = 'ORGANIZATION'
+          AND p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
     """, nativeQuery = true)
     Page<PetSummaryProjection> findSummariesByOrganizationId(
             @Param("organizationId") UUID organizationId,
+            @Param("species") String species,
+            @Param("breed") String breed,
+            @Param("gender") String gender,
+            Pageable pageable);
+
+    @Query(value = """
+        SELECT p.pet_id AS id,
+               p.name AS name,
+               p.species AS species,
+               p.breed AS breed,
+               p.age AS age,
+               p.is_vaccinated AS vaccinated,
+               p.gender AS gender,
+               p.status AS status,
+               p.health_status AS healthStatus,
+               (SELECT mf.public_id FROM pet_media pm JOIN media_files mf ON pm.media_file_id = mf.media_id
+                WHERE pm.pet_id = p.pet_id ORDER BY pm.created_at LIMIT 1) AS imagePublicId,
+               pco.owner_type AS ownerType,
+               pco.owner_id AS ownerId,
+               COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
+               u.avatar_url AS ownerAvatarUrl,
+               COALESCE(u.phone, own_org.phone) AS ownerPhone,
+               pco.caretaker_user_id AS caretakerUserId,
+               COALESCE(NULLIF(caretaker.full_name, ''), caretaker.username) AS caretakerName,
+               caretaker.avatar_url AS caretakerAvatarUrl,
+               caretaker.phone AS caretakerPhone,
+               o.organization_id AS organizationId,
+               o.name AS organizationName,
+               o.province_name AS provinceName,
+               CAST(o.province_code AS INTEGER) AS provinceCode,
+               o.ward_name AS wardName,
+               CAST(o.ward_code AS INTEGER) AS wardCode
+        FROM pets p
+        JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        LEFT JOIN users u ON pco.owner_type = 'USER' AND pco.owner_id = u.user_id
+        LEFT JOIN organizations own_org ON pco.owner_type = 'ORGANIZATION' AND pco.owner_id = own_org.organization_id
+        LEFT JOIN users caretaker ON pco.owner_type = 'ORGANIZATION' AND pco.caretaker_user_id = caretaker.user_id
+        LEFT JOIN organizations o ON p.shelter_id = o.organization_id
+        WHERE pco.owner_id = :userId
+          AND pco.owner_type = 'USER'
+          AND p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+    """, countQuery = """
+        SELECT COUNT(p.pet_id)
+        FROM pets p
+        JOIN pets_current_owner pco ON pco.pet_id = p.pet_id
+        WHERE pco.owner_id = :userId
+          AND pco.owner_type = 'USER'
+          AND p.is_deleted = false
+          AND (:species IS NULL OR p.species = :species)
+          AND (:breed IS NULL OR p.breed = :breed)
+          AND (:gender IS NULL OR p.gender = :gender)
+    """, nativeQuery = true)
+    Page<PetSummaryProjection> findSummariesByUserId(
+            @Param("userId") UUID userId,
+            @Param("species") String species,
+            @Param("breed") String breed,
+            @Param("gender") String gender,
             Pageable pageable);
 
     // ── Image public_ids ──

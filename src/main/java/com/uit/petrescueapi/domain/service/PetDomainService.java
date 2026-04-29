@@ -109,6 +109,7 @@ public class PetDomainService {
                 .petId(saved.getId())
                 .ownerType("USER")
                 .ownerId(userId)
+                .caretakerUserId(null)
                 .build();
         currentOwnerRepository.upsert(currentOwner);
         log.debug("Updated current owner: pet {} → user {}", saved.getId(), userId);
@@ -143,6 +144,7 @@ public class PetDomainService {
                 .petId(saved.getId())
                 .ownerType("ORGANIZATION")
                 .ownerId(shelterId)
+                .caretakerUserId(null)
                 .build();
         currentOwnerRepository.upsert(currentOwner);
         log.debug("Updated current owner: pet {} → organization {}", saved.getId(), shelterId);
@@ -179,6 +181,7 @@ public class PetDomainService {
                 .petId(petId)
                 .ownerType(newOwnerType)
                 .ownerId(newOwnerId)
+                .caretakerUserId(null)
                 .build();
         currentOwnerRepository.upsert(currentOwner);
         

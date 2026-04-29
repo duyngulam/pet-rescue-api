@@ -125,9 +125,14 @@ public class PetController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String species,
             @RequestParam(required = false) String breed,
-            @RequestParam(required = false) String gender) {
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) PetStatus status,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID organizationId) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(petQueryPort.findAllWithFilters(species, breed, gender, PageRequest.of(page, size)))));
+                PageResponse.from(petQueryPort.findAllWithFilters(
+                        species, breed, gender, status, userId, organizationId, PageRequest.of(page, size)
+                ))));
     }
 
     @GetMapping("/available")
@@ -137,9 +142,12 @@ public class PetController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String species,
             @RequestParam(required = false) String breed,
-            @RequestParam(required = false) String gender) {
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) UUID organizationId) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(petQueryPort.findAvailableWithFilters(species, breed, gender, PageRequest.of(page, size)))));
+                PageResponse.from(petQueryPort.findAvailableWithFilters(
+                        species, breed, gender, organizationId, PageRequest.of(page, size)
+                ))));
     }
 
     @GetMapping("/by-organization/{organizationId}")
@@ -147,8 +155,28 @@ public class PetController {
     public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getByOrganization(
             @PathVariable UUID organizationId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String species,
+            @RequestParam(required = false) String breed,
+            @RequestParam(required = false) String gender) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(petQueryPort.findByOrganizationId(organizationId, PageRequest.of(page, size)))));
+                PageResponse.from(petQueryPort.findByOrganizationId(
+                        organizationId, species, breed, gender, PageRequest.of(page, size)
+                ))));
+    }
+
+    @GetMapping("/by-user/{userId}")
+    @Operation(summary = "List pets owned by a user (paginated, with optional filters)")
+    public ResponseEntity<ApiResponse<PageResponse<PetSummaryResponseDto>>> getByUser(
+            @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String species,
+            @RequestParam(required = false) String breed,
+            @RequestParam(required = false) String gender) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(petQueryPort.findByUserId(
+                        userId, species, breed, gender, PageRequest.of(page, size)
+                ))));
     }
 }

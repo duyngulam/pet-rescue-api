@@ -1,15 +1,21 @@
 package com.uit.petrescueapi.presentation.controller;
 
 import com.uit.petrescueapi.application.dto.admin.AssignOrgRoleRequestDto;
+import com.uit.petrescueapi.application.dto.admin.CreateAdminAccountRequestDto;
 import com.uit.petrescueapi.application.dto.admin.CreateOrganizationAccountRequestDto;
+import com.uit.petrescueapi.application.dto.pet.CreatePetRequestDto;
+import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.organization.OrganizationMemberResponseDto;
 import com.uit.petrescueapi.application.dto.user.UserResponseDto;
+import com.uit.petrescueapi.application.port.command.PetCommandPort;
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
+import com.uit.petrescueapi.domain.entity.Pet;
 import com.uit.petrescueapi.domain.entity.User;
 import com.uit.petrescueapi.domain.exception.BusinessException;
 import com.uit.petrescueapi.domain.service.OrganizationDomainService;
 import com.uit.petrescueapi.domain.service.UserDomainService;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
+import com.uit.petrescueapi.presentation.mapper.PetWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,7 +40,56 @@ public class AdminController {
 
     private final UserDomainService userDomainService;
     private final OrganizationDomainService organizationDomainService;
+    private final PetCommandPort petCommandPort;
+    private final PetWebMapper petWebMapper;
     private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/accounts")
+    @Operation(summary = "Create a fully custom account (default ACTIVE)")
+    public ResponseEntity<ApiResponse<UserResponseDto>> createAccount(
+            @Valid @RequestBody CreateAdminAccountRequestDto cmd) {
+
+        String systemRole = (cmd.getSystemRole() == null || cmd.getSystemRole().isBlank())
+                ? "USER"
+                : cmd.getSystemRole();
+
+        String hashedPassword = passwordEncoder.encode(cmd.getPassword());
+
+        User user = userDomainService.createCustomActiveUser(
+                cmd.getUsername(),
+                cmd.getEmail(),
+                hashedPassword,
+                systemRole,
+                cmd.getFullName(),
+                cmd.getAvatarUrl(),
+                cmd.getPhone(),
+                cmd.getGender(),
+                cmd.getStreetAddress(),
+                cmd.getWardCode(),
+                cmd.getWardName(),
+                cmd.getProvinceCode(),
+                cmd.getProvinceName()
+        );
+
+        UserResponseDto dto = UserResponseDto.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .gender(user.getGender())
+                .streetAddress(user.getStreetAddress())
+                .wardName(user.getWardName())
+                .provinceName(user.getProvinceName())
+                .status(user.getStatus().name())
+                .emailVerified(user.isEmailVerified())
+                .roles(user.getRoles().stream().map(r -> r.getCode()).toList())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(dto));
+    }
 
     @PostMapping("/organizations/{organizationId}/accounts")
     @Operation(summary = "Create a new user account and assign an organization role")
@@ -97,5 +152,16 @@ public class AdminController {
                 .build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(dto));
+    }
+
+    @PostMapping("/organizations/{organizationId}/users/{userId}/pets")
+    @Operation(summary = "Create pet for a user in an organization context")
+    public ResponseEntity<ApiResponse<PetResponseDto>> createPetForUserInOrganization(
+            @PathVariable UUID organizationId,
+            @PathVariable UUID userId,
+            @Valid @RequestBody CreatePetRequestDto cmd) {
+
+        Pet created = petCommandPort.createForUserInOrganization(cmd, organizationId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(petWebMapper.toDto(created)));
     }
 }

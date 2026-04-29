@@ -70,6 +70,59 @@ public class UserDomainService {
         return userRepository.save(user);
     }
 
+    /**
+     * Create a fully custom ACTIVE user account (admin operation).
+     * Password must be pre-hashed by the caller.
+     */
+    public User createCustomActiveUser(
+            String username,
+            String email,
+            String hashedPassword,
+            String roleCode,
+            String fullName,
+            String avatarUrl,
+            String phone,
+            String gender,
+            String streetAddress,
+            String wardCode,
+            String wardName,
+            String provinceCode,
+            String provinceName
+    ) {
+        if (userRepository.existsByEmail(email)) {
+            throw new ResourceAlreadyExistsException("User", "email", email);
+        }
+        if (userRepository.existsByUsername(username)) {
+            throw new ResourceAlreadyExistsException("User", "username", username);
+        }
+
+        Role role = roleRepository.findByCode(roleCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "code", roleCode));
+
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .username(username)
+                .email(email)
+                .passwordHash(hashedPassword)
+                .fullName(fullName)
+                .avatarUrl(avatarUrl)
+                .phone(phone)
+                .gender(gender)
+                .streetAddress(streetAddress)
+                .wardCode(wardCode)
+                .wardName(wardName)
+                .provinceCode(provinceCode)
+                .provinceName(provinceName)
+                .status(UserStatus.ACTIVE)
+                .emailVerified(true)
+                .roles(Set.of(role))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        return userRepository.save(user);
+    }
+
     public User updateProfile(UUID id, String username, String avatarUrl) {
         User user = findById(id);
         if (username != null) user.setUsername(username);

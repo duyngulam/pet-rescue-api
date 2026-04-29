@@ -17,4 +17,5 @@ public class PetCurrentOwner {
     private UUID petId;
     private String ownerType;
     private UUID ownerId;
+    private UUID caretakerUserId;
 }

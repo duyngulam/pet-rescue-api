@@ -54,6 +54,33 @@ public class PetCommandUseCase implements PetCommandPort {
         return domainService.createForShelter(pet, shelterId);
     }
 
+    @Override
+    public Pet createForUserInOrganization(CreatePetRequestDto cmd, UUID organizationId, UUID userId) {
+        log.debug("Command: create pet '{}' for user {} in organization {}", cmd.getName(), userId, organizationId);
+
+        // Ensure target user exists.
+        userDomainService.findById(userId);
+
+        // Ensure user belongs to the organization context.
+        if (!organizationDomainService.isMember(organizationId, userId)) {
+            throw new ForbiddenException(
+                    String.format("User %s is not a member of organization %s", userId, organizationId));
+        }
+
+        Pet pet = buildPetFromDto(cmd);
+        pet.setShelterId(organizationId);
+        Pet created = domainService.createForShelter(pet, organizationId);
+
+        currentOwnerRepository.upsert(PetCurrentOwner.builder()
+                .petId(created.getId())
+                .ownerType("ORGANIZATION")
+                .ownerId(organizationId)
+                .caretakerUserId(userId)
+                .build());
+
+        return created;
+    }
+
     private Pet buildPetFromDto(CreatePetRequestDto cmd) {
         return Pet.builder()
                 .name(cmd.getName())

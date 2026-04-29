@@ -33,6 +33,15 @@ public interface PetDetailProjection {
     UUID getShelterId();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
+    String getOwnerType();
+    UUID getOwnerId();
+    String getOwnerName();
+    String getOwnerAvatarUrl();
+    String getOwnerPhone();
+    UUID getCaretakerUserId();
+    String getCaretakerName();
+    String getCaretakerAvatarUrl();
+    String getCaretakerPhone();
 
     // ── Organization fields (for nested OrganizationMinimalDto) ─
     UUID getOrganizationId();

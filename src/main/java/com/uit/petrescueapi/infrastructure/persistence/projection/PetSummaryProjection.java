@@ -22,6 +22,15 @@ public interface PetSummaryProjection {
     PetStatus getStatus();
     HealthStatus getHealthStatus();
     String getImagePublicId();
+    String getOwnerType();
+    UUID getOwnerId();
+    String getOwnerName();
+    String getOwnerAvatarUrl();
+    String getOwnerPhone();
+    UUID getCaretakerUserId();
+    String getCaretakerName();
+    String getCaretakerAvatarUrl();
+    String getCaretakerPhone();
 
     // ── Organization fields (for nested OrganizationMinimalDto) ─
     UUID getOrganizationId();

@@ -31,6 +31,12 @@ public interface PetCommandPort {
      */
     Pet createForShelter(CreatePetRequestDto cmd, UUID shelterId, UUID userId);
 
+    /**
+     * Create a pet under an organization context but assign current ownership to a user.
+     * Intended for administrative operations.
+     */
+    Pet createForUserInOrganization(CreatePetRequestDto cmd, UUID organizationId, UUID userId);
+
     Pet update(UUID id, UpdatePetRequestDto cmd);
 
     void delete(UUID id);

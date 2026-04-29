@@ -4,6 +4,7 @@ import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.PetQueryDataPort;
 import com.uit.petrescueapi.application.port.query.PetQueryPort;
+import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,30 +32,66 @@ public class PetQueryUseCase implements PetQueryPort {
     @Override
     public Page<PetSummaryResponseDto> findAll(Pageable pageable) {
         log.debug("Query: find all pets (paginated)");
-        return queryDataPort.findAllSummaries(pageable);
+        return queryDataPort.findAllWithFilters(null, null, null, null, null, null, pageable);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findAllWithFilters(String species, String breed, String gender, Pageable pageable) {
-        log.debug("Query: find all pets with filters (species={}, breed={}, gender={})", species, breed, gender);
-        return queryDataPort.findAllWithFilters(species, breed, gender, pageable);
+    public Page<PetSummaryResponseDto> findAllWithFilters(
+            String species,
+            String breed,
+            String gender,
+            PetStatus status,
+            UUID ownerUserId,
+            UUID ownerOrganizationId,
+            Pageable pageable
+    ) {
+        log.debug("Query: find all pets with filters (species={}, breed={}, gender={}, status={}, ownerUserId={}, ownerOrganizationId={})",
+                species, breed, gender, status, ownerUserId, ownerOrganizationId);
+        return queryDataPort.findAllWithFilters(species, breed, gender, status, ownerUserId, ownerOrganizationId, pageable);
     }
 
     @Override
     public Page<PetSummaryResponseDto> findAvailable(Pageable pageable) {
         log.debug("Query: find available pets (paginated)");
-        return queryDataPort.findAvailableSummaries(pageable);
+        return queryDataPort.findAvailableWithFilters(null, null, null, null, pageable);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findAvailableWithFilters(String species, String breed, String gender, Pageable pageable) {
-        log.debug("Query: find available pets with filters (species={}, breed={}, gender={})", species, breed, gender);
-        return queryDataPort.findAvailableWithFilters(species, breed, gender, pageable);
+    public Page<PetSummaryResponseDto> findAvailableWithFilters(
+            String species,
+            String breed,
+            String gender,
+            UUID ownerOrganizationId,
+            Pageable pageable
+    ) {
+        log.debug("Query: find available pets with filters (species={}, breed={}, gender={}, status={}, ownerOrganizationId={})",
+                species, breed, gender, PetStatus.UNOWNED, ownerOrganizationId);
+        return queryDataPort.findAvailableWithFilters(species, breed, gender, ownerOrganizationId, pageable);
     }
 
     @Override
-    public Page<PetSummaryResponseDto> findByOrganizationId(UUID organizationId, Pageable pageable) {
-        log.debug("Query: find pets by organization id {} (paginated)", organizationId);
-        return queryDataPort.findSummariesByOrganizationId(organizationId, pageable);
+    public Page<PetSummaryResponseDto> findByOrganizationId(
+            UUID organizationId,
+            String species,
+            String breed,
+            String gender,
+            Pageable pageable
+    ) {
+        log.debug("Query: find pets by organization id {} with filters (species={}, breed={}, gender={})",
+                organizationId, species, breed, gender);
+        return queryDataPort.findSummariesByOrganizationId(organizationId, species, breed, gender, pageable);
+    }
+
+    @Override
+    public Page<PetSummaryResponseDto> findByUserId(
+            UUID userId,
+            String species,
+            String breed,
+            String gender,
+            Pageable pageable
+    ) {
+        log.debug("Query: find pets by user id {} with filters (species={}, breed={}, gender={})",
+                userId, species, breed, gender);
+        return queryDataPort.findSummariesByUserId(userId, species, breed, gender, pageable);
     }
 }

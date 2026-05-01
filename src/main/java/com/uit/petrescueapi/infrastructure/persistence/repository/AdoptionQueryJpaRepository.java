@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,27 +28,37 @@ public interface AdoptionQueryJpaRepository extends JpaRepository<AdoptionApplic
 
     @Query("""
         SELECT a.applicationId   AS applicationId,
+               a.adoptionCode    AS adoptionCode,
                p.name            AS petName,
+               (SELECT MIN(mf.publicId)
+                FROM PetMediaJpaEntity pm
+                JOIN MediaFileJpaEntity mf ON pm.mediaFileId = mf.mediaId
+                WHERE pm.petId = p.id) AS petPrimaryImageUrl,
                u.username        AS applicantUsername,
                a.status          AS status,
                a.experience      AS experience,
                a.liveCondition   AS liveCondition,
                a.createdAt       AS createdAt
-        FROM AdoptionApplicationJpaEntity a
-        LEFT JOIN PetJpaEntity p ON a.petId = p.id
-        LEFT JOIN UserJpaEntity u ON a.applicantId = u.userId
-        WHERE a.deleted = false
-          AND (:status IS NULL OR a.status = :status)
-    """)
+         FROM AdoptionApplicationJpaEntity a
+         LEFT JOIN PetJpaEntity p ON a.petId = p.id
+         LEFT JOIN UserJpaEntity u ON a.applicantId = u.userId
+         WHERE a.deleted = false
+          AND a.status IN :statuses
+     """)
     Page<AdoptionSummaryProjection> findAllSummaries(
-            @Param("status") String status,
+            @Param("statuses") List<String> statuses,
             Pageable pageable);
 
     // ── Detail (single adoption application) ────
 
     @Query("""
         SELECT a.applicationId   AS applicationId,
+               a.adoptionCode    AS adoptionCode,
                p.name            AS petName,
+               (SELECT MIN(mf.publicId)
+                FROM PetMediaJpaEntity pm
+                JOIN MediaFileJpaEntity mf ON pm.mediaFileId = mf.mediaId
+                WHERE pm.petId = p.id) AS petPrimaryImageUrl,
                u.username        AS applicantUsername,
                a.status          AS status,
                a.experience      AS experience,
@@ -59,11 +70,13 @@ public interface AdoptionQueryJpaRepository extends JpaRepository<AdoptionApplic
                o.name            AS organizationName,
                a.note            AS note,
                a.decidedAt       AS decidedAt,
-               a.decidedBy       AS decidedBy
+               a.decidedBy       AS decidedBy,
+               d.username        AS decidedByUsername
         FROM AdoptionApplicationJpaEntity a
         LEFT JOIN PetJpaEntity p ON a.petId = p.id
         LEFT JOIN UserJpaEntity u ON a.applicantId = u.userId
         LEFT JOIN OrganizationJpaEntity o ON a.organizationId = o.organizationId
+        LEFT JOIN UserJpaEntity d ON a.decidedBy = d.userId
         WHERE a.deleted = false AND a.applicationId = :id
     """)
     Optional<AdoptionDetailProjection> findDetailById(@Param("id") UUID id);

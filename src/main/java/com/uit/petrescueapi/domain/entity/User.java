@@ -19,6 +19,7 @@ import java.util.UUID;
 public class User {
 
     private UUID id;
+    private String userCode;
     private String username;
     private String email;
     private String passwordHash;
@@ -62,6 +63,16 @@ public class User {
 
     public void ban() {
         this.status = UserStatus.BANNED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void lock() {
+        this.status = UserStatus.LOCKED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
         this.updatedAt = LocalDateTime.now();
     }
 

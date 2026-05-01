@@ -14,6 +14,7 @@ import com.uit.petrescueapi.domain.repository.PasswordResetTokenRepository;
 import com.uit.petrescueapi.domain.repository.RefreshTokenRepository;
 import com.uit.petrescueapi.domain.repository.RoleRepository;
 import com.uit.petrescueapi.domain.repository.UserRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.SystemRole;
 import com.uit.petrescueapi.domain.valueobject.UserStatus;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class AuthDomainService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationTokenRepository verificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final VisualCodeRepository visualCodeRepository;
 
     // ── Registration ────────────────────────────
 
@@ -75,6 +77,7 @@ public class AuthDomainService {
 
         User user = User.builder()
                 .id(UUID.randomUUID())
+                .userCode(visualCodeRepository.nextUserCode())
                 .username(username)
                 .email(email)
                 .passwordHash(hashedPassword)

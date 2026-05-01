@@ -41,6 +41,12 @@ public class BannerQueryUseCase implements BannerQueryPort {
     }
 
     @Override
+    public Page<BannerResponseDto> findAllFiltered(String targetPage, Boolean active, Pageable pageable) {
+        log.debug("Query: find banners with filters targetPage={}, active={}", targetPage, active);
+        return domainService.findAllFiltered(targetPage, active, pageable).map(this::toDto);
+    }
+
+    @Override
     public Page<BannerResponseDto> findByTargetPage(String targetPage, Pageable pageable) {
         log.debug("Query: find banners by target page {}", targetPage);
         return domainService.findByTargetPage(targetPage, pageable).map(this::toDto);
@@ -70,6 +76,7 @@ public class BannerQueryUseCase implements BannerQueryPort {
                 .bannerId(banner.getBannerId())
                 .title(banner.getTitle())
                 .subtitle(banner.getSubtitle())
+                .buttonText(banner.getButtonText())
                 .mediaId(banner.getMediaId())
                 .mediaUrl(mediaUrl)
                 .linkUrl(banner.getLinkUrl())
@@ -77,7 +84,7 @@ public class BannerQueryUseCase implements BannerQueryPort {
                 .displayOrder(banner.getDisplayOrder())
                 .startDate(banner.getStartDate())
                 .endDate(banner.getEndDate())
-                .active(banner.isActive())
+                .active(Boolean.TRUE.equals(banner.getActive()))
                 .targetPage(banner.getTargetPage())
                 .createdAt(banner.getCreatedAt())
                 .updatedAt(banner.getUpdatedAt())

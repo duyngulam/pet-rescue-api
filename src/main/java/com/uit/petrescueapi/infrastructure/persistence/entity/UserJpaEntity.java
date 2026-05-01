@@ -28,6 +28,9 @@ public class UserJpaEntity extends BaseJpaEntity {
     @Column(name = "user_id", updatable = false, nullable = false)
     private UUID userId;
 
+    @Column(name = "user_code", nullable = false, updatable = false)
+    private String userCode;
+
     @Column(name = "username", unique = true, nullable = false)
     private String username;
 

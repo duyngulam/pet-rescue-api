@@ -24,6 +24,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -139,11 +140,13 @@ public class OrganizationController {
     @GetMapping
     @Operation(summary = "List organizations (paginated, optional status filter)")
     public ResponseEntity<ApiResponse<PageResponse<OrganizationSummaryResponseDto>>> getAll(
-            @RequestParam(required = false) OrganizationStatus status,
+            @RequestParam(required = false) List<String> status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        List<OrganizationStatus> statusList = status == null ? null : 
+                status.stream().map(OrganizationStatus::valueOf).toList();
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findAll(status, PageRequest.of(page, size)))));
+                PageResponse.from(queryPort.findAll(statusList, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/{id}/members")

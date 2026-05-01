@@ -13,6 +13,7 @@ public interface RescueCaseDetailProjection {
 
     // ── Summary fields ───────────────────────────
     UUID getCaseId();
+    String getCaseCode();
     String getSpecies();
     String getPriority();
     String getStatus();

@@ -14,6 +14,7 @@ import java.util.UUID;
 @Schema(description = "Rescue case summary")
 public class RescueCaseSummaryResponseDto {
     private UUID caseId;
+    private String caseCode;
     private String species;
     @Schema(description = "Priority level", example = "HIGH")
     private RescuePriority priority;

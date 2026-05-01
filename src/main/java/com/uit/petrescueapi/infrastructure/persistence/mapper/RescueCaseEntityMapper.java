@@ -12,9 +12,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
@@ -26,15 +23,11 @@ public interface RescueCaseEntityMapper {
     @Mapping(target = "longitude", source = "location", qualifiedByName = "pointToLng")
     @Mapping(target = "status", source = "status", qualifiedByName = "stringToStatus")
     @Mapping(target = "priority", source = "priority", qualifiedByName = "stringToPriority")
-    @Mapping(target = "reportedAt", source = "reportedAt", qualifiedByName = "offsetToLocal")
-    @Mapping(target = "resolvedAt", source = "resolvedAt", qualifiedByName = "offsetToLocal")
     RescueCase toDomain(RescueCaseJpaEntity entity);
 
     @Mapping(target = "location", source = ".", qualifiedByName = "latLngToPoint")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     @Mapping(target = "priority", source = "priority", qualifiedByName = "priorityToString")
-    @Mapping(target = "reportedAt", source = "reportedAt", qualifiedByName = "localToOffset")
-    @Mapping(target = "resolvedAt", source = "resolvedAt", qualifiedByName = "localToOffset")
     @Mapping(target = "reporter", ignore = true)
     @Mapping(target = "organization", ignore = true)
     @Mapping(target = "pet", ignore = true)
@@ -76,15 +69,5 @@ public interface RescueCaseEntityMapper {
     @Named("priorityToString")
     default String priorityToString(RescuePriority p) {
         return p == null ? null : p.name();
-    }
-
-    @Named("offsetToLocal")
-    default LocalDateTime offsetToLocal(OffsetDateTime odt) {
-        return odt == null ? null : odt.toLocalDateTime();
-    }
-
-    @Named("localToOffset")
-    default OffsetDateTime localToOffset(LocalDateTime ldt) {
-        return ldt == null ? null : ldt.atOffset(ZoneOffset.UTC);
     }
 }

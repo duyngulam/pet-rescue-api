@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,8 +36,8 @@ public class OrganizationQueryUseCase implements OrganizationQueryPort {
     }
 
     @Override
-    public Page<OrganizationSummaryResponseDto> findAll(OrganizationStatus status, Pageable pageable) {
-        return queryDataPort.findAllSummary(status, pageable);
+    public Page<OrganizationSummaryResponseDto> findAll(List<OrganizationStatus> statuses, Pageable pageable) {
+        return queryDataPort.findAllSummary(statuses, pageable);
     }
 
     @Override

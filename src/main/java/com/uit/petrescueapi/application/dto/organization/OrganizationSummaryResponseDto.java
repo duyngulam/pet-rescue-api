@@ -19,6 +19,9 @@ public class OrganizationSummaryResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID organizationId;
 
+    @Schema(example = "O-1001")
+    private String organizationCode;
+
     @Schema(example = "Happy Paws Shelter")
     private String name;
 
@@ -42,4 +45,7 @@ public class OrganizationSummaryResponseDto {
 
     @Schema(example = "duyngu@gmail.com")
     private String email;
+
+    @Schema(example = "https://cdn.example.com/organizations/org-cover.jpg")
+    private String imageUrl;
 }

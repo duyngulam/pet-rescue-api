@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -26,6 +26,9 @@ public class AdoptionApplicationJpaEntity extends BaseJpaEntity {
     @Id
     @Column(name = "application_id", updatable = false, nullable = false)
     private UUID applicationId;
+
+    @Column(name = "adoption_code", nullable = false, updatable = false)
+    private String adoptionCode;
 
     @Column(name = "pet_id")
     private UUID petId;
@@ -49,7 +52,7 @@ public class AdoptionApplicationJpaEntity extends BaseJpaEntity {
     private String liveCondition;
 
     @Column(name = "decided_at", columnDefinition = "TIMESTAMPTZ")
-    private OffsetDateTime decidedAt;
+    private LocalDateTime decidedAt;
 
     @Column(name = "decided_by")
     private UUID decidedBy;

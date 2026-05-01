@@ -16,6 +16,7 @@ public interface PetDetailProjection {
 
     // ── Pet fields ──────────────────────────────
     UUID getId();
+    String getPetCode();
     String getName();
     String getSpecies();
     String getBreed();

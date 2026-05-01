@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,8 +30,11 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
     private final OrganizationMemberJpaRepository memberRepo;
 
     @Override
-    public Page<OrganizationSummaryResponseDto> findAllSummary(OrganizationStatus status, Pageable pageable) {
-        return queryRepo.findAllSummary(status, pageable).map(this::toSummaryDto);
+    public Page<OrganizationSummaryResponseDto> findAllSummary(List<OrganizationStatus> statuses, Pageable pageable) {
+        List<OrganizationStatus> normalizedStatuses = (statuses == null || statuses.isEmpty())
+                ? Arrays.stream(OrganizationStatus.values()).toList()
+                : statuses;
+        return queryRepo.findAllSummary(normalizedStatuses, pageable).map(this::toSummaryDto);
     }
 
     @Override
@@ -47,33 +52,38 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
     private OrganizationSummaryResponseDto toSummaryDto(OrganizationSummaryProjection p) {
         return OrganizationSummaryResponseDto.builder()
                 .organizationId(p.getOrganizationId())
+                .organizationCode(p.getOrganizationCode())
                 .name(p.getName())
                 .type(p.getType())
                 .status(p.getStatus())
-                .streetAddress(p.getStreet_address())
-                .wardName(p.getWard_name())
-                .provinceName(p.getProvince_name())
+                .streetAddress(p.getStreetAddress())
+                .wardName(p.getWardName())
+                .provinceName(p.getProvinceName())
                 .phone(p.getPhone())
                 .email(p.getEmail())
+                .imageUrl(p.getImageUrl())
                 .build();
     }
 
     private OrganizationResponseDto toDetailDto(OrganizationDetailProjection p) {
         return OrganizationResponseDto.builder()
                 .organizationId(p.getOrganizationId())
+                .organizationCode(p.getOrganizationCode())
                 .name(p.getName())
                 .description(p.getDescription())
                 .type(p.getType())
-                .streetAddress(p.getStreet_address())
-                .wardName(p.getWard_name())
-                .provinceName(p.getProvince_name())
+                .streetAddress(p.getStreetAddress())
+                .wardName(p.getWardName())
+                .provinceName(p.getProvinceName())
                 .phone(p.getPhone())
                 .email(p.getEmail())
-                .officialLink(p.getOfficial_link())
+                .imageUrl(p.getImageUrl())
+                .officialLink(p.getOfficialLink())
                 .latitude(p.getLatitude())
                 .longitude(p.getLongitude())
                 .status(p.getStatus())
-                .requestedByUserId(p.getRequested_by_user_id())
+                .requestedByUserId(p.getRequestedByUserId())
+                .requestedByUsername(p.getRequestedByUsername())
                 .createdBy(p.getCreatedBy())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
@@ -83,6 +93,7 @@ public class OrganizationQueryAdapter implements OrganizationQueryDataPort {
     private OrganizationMemberResponseDto toMemberDto(OrganizationMemberProjection p) {
         return OrganizationMemberResponseDto.builder()
                 .organizationId(p.getOrganizationId())
+                .organizationName(p.getOrganizationName())
                 .userId(p.getUserId())
                 .username(p.getUsername())
                 .role(p.getRole())

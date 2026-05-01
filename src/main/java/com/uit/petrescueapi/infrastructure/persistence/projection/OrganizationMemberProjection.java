@@ -9,6 +9,7 @@ import java.util.UUID;
  */
 public interface OrganizationMemberProjection {
     UUID getOrganizationId();
+    String getOrganizationName();
     UUID getUserId();
     String getUsername();
     String getRole();

@@ -2,10 +2,12 @@ package com.uit.petrescueapi.domain.service;
 
 import com.uit.petrescueapi.domain.entity.Organization;
 import com.uit.petrescueapi.domain.entity.OrganizationMember;
+import com.uit.petrescueapi.domain.exception.BusinessException;
 import com.uit.petrescueapi.domain.exception.ResourceAlreadyExistsException;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.OrganizationMemberRepository;
 import com.uit.petrescueapi.domain.repository.OrganizationRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,7 @@ public class OrganizationDomainService {
 
     private final OrganizationRepository orgRepository;
     private final OrganizationMemberRepository memberRepository;
+    private final VisualCodeRepository visualCodeRepository;
 
     // ── Commands ────────────────────────────────────
 
@@ -44,6 +47,7 @@ public class OrganizationDomainService {
     public Organization create(Organization org) {
         log.info("Creating organization: {}", org.getName());
         org.setOrganizationId(UUID.randomUUID());
+        org.setOrganizationCode(visualCodeRepository.nextOrganizationCode());
         org.setStatus(OrganizationStatus.PENDING);
         return orgRepository.save(org);
     }
@@ -55,6 +59,7 @@ public class OrganizationDomainService {
     public Organization createByUser(Organization org) {
         log.info("Creating organization by user: {}", org.getName());
         org.setOrganizationId(UUID.randomUUID());
+        org.setOrganizationCode(visualCodeRepository.nextOrganizationCode());
         org.setStatus(OrganizationStatus.PENDING);
         return orgRepository.save(org);
     }
@@ -66,6 +71,7 @@ public class OrganizationDomainService {
     public Organization createByAdmin(Organization org) {
         log.info("Creating organization by admin (direct ACTIVE): {}", org.getName());
         org.setOrganizationId(UUID.randomUUID());
+        org.setOrganizationCode(visualCodeRepository.nextOrganizationCode());
         org.setStatus(OrganizationStatus.ACTIVE);
         return orgRepository.save(org);
     }
@@ -73,6 +79,9 @@ public class OrganizationDomainService {
     public Organization update(UUID id, Organization patch) {
         log.debug("Updating organization {}", id);
         Organization existing = findOrThrow(id);
+        if (existing.getStatus() == OrganizationStatus.PENDING) {
+            throw new BusinessException("Pending organizations cannot be edited");
+        }
         if (patch.getName() != null)          existing.setName(patch.getName());
         if (patch.getDescription() != null)   existing.setDescription(patch.getDescription());
         if (patch.getType() != null)          existing.setType(patch.getType());
@@ -81,6 +90,7 @@ public class OrganizationDomainService {
         if (patch.getProvinceCode() != null)  existing.setProvinceCode(patch.getProvinceCode());
         if (patch.getPhone() != null)         existing.setPhone(patch.getPhone());
         if (patch.getEmail() != null)         existing.setEmail(patch.getEmail());
+        if (patch.getImageUrl() != null)      existing.setImageUrl(patch.getImageUrl());
         if (patch.getOfficialLink() != null)  existing.setOfficialLink(patch.getOfficialLink());
         if (patch.getLatitude() != null)      existing.setLatitude(patch.getLatitude());
         if (patch.getLongitude() != null)     existing.setLongitude(patch.getLongitude());

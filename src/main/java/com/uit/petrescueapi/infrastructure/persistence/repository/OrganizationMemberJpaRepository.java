@@ -39,13 +39,15 @@ public interface OrganizationMemberJpaRepository
      */
     @Query("""
             SELECT m.organizationId AS organizationId,
+                   o.name          AS organizationName,
                    m.userId         AS userId,
                    u.username       AS username,
                    m.role           AS role,
                    m.status         AS status,
-                   m.joinedAt       AS joinedAt
+                    m.joinedAt       AS joinedAt
             FROM OrganizationMemberJpaEntity m
             JOIN m.user u
+            JOIN OrganizationJpaEntity o ON o.organizationId = m.organizationId
             WHERE m.organizationId = :organizationId
             """)
     Page<OrganizationMemberProjection> findByOrganizationId(

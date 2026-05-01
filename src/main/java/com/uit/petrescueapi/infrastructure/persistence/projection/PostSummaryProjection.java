@@ -12,7 +12,10 @@ import java.util.UUID;
 public interface PostSummaryProjection {
 
     UUID getPostId();
+    UUID getAuthorId();
     String getAuthorUsername();
     String getContent();
+    Integer getLikeCount();
+    Integer getCommentCount();
     LocalDateTime getCreatedAt();
 }

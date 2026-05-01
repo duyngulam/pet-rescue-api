@@ -5,6 +5,7 @@ import com.uit.petrescueapi.application.dto.banner.CreateBannerRequestDto;
 import com.uit.petrescueapi.application.dto.banner.UpdateBannerRequestDto;
 import com.uit.petrescueapi.application.port.command.BannerCommandPort;
 import com.uit.petrescueapi.application.port.query.BannerQueryPort;
+import com.uit.petrescueapi.domain.exception.BusinessException;
 import com.uit.petrescueapi.presentation.dto.ApiResponse;
 import com.uit.petrescueapi.presentation.dto.PageResponse;
 import com.uit.petrescueapi.presentation.mapper.BannerWebMapper;
@@ -26,7 +27,7 @@ import java.util.UUID;
  * REST controller for Banner CRUD operations.
  *
  * Public endpoints:
- *  - GET /active/{targetPage} - Get active banners for display
+     *  - GET /active?targetPage=HOME - Get active banners for display
  *
  * Admin endpoints (require ADMIN role):
  *  - All other CRUD operations
@@ -44,11 +45,11 @@ public class BannerController {
 
     // ── Public Endpoints ─────────────────────────────
 
-    @GetMapping("/active/{targetPage}")
-    @Operation(summary = "Get active banners for a target page (public)",
+    @GetMapping("/active")
+    @Operation(summary = "Get active banners by query params (public)",
                description = "Returns banners that are active, within date range, sorted by display order")
     public ResponseEntity<ApiResponse<List<BannerResponseDto>>> getActiveBanners(
-            @PathVariable String targetPage) {
+            @RequestParam(defaultValue = "HOME") String targetPage) {
         return ResponseEntity.ok(ApiResponse.ok(queryPort.findActiveByTargetPage(targetPage)));
     }
 
@@ -107,20 +108,25 @@ public class BannerController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List all banners (Admin only, paginated)")
     public ResponseEntity<ApiResponse<PageResponse<BannerResponseDto>>> getAll(
+            @RequestParam(required = false) String targetPage,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        Boolean activeFilter = parseStatusFilter(status);
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
+                PageResponse.from(queryPort.findAllFiltered(targetPage, activeFilter, PageRequest.of(page, size)))));
     }
 
-    @GetMapping("/by-target-page/{targetPage}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "List banners by target page (Admin only, paginated)")
-    public ResponseEntity<ApiResponse<PageResponse<BannerResponseDto>>> getByTargetPage(
-            @PathVariable String targetPage,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findByTargetPage(targetPage, PageRequest.of(page, size)))));
+    private Boolean parseStatusFilter(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        if ("ACTIVE".equalsIgnoreCase(status)) {
+            return true;
+        }
+        if ("INACTIVE".equalsIgnoreCase(status)) {
+            return false;
+        }
+        throw new BusinessException("Invalid banner status filter. Use ACTIVE or INACTIVE", "INVALID_BANNER_STATUS");
     }
 }

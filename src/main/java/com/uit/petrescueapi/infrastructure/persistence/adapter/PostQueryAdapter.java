@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.infrastructure.persistence.adapter;
 
 import com.uit.petrescueapi.application.dto.media.MediaFileResponseDto;
+import com.uit.petrescueapi.application.dto.post.PostCursorResponseDto;
 import com.uit.petrescueapi.application.dto.post.PostResponseDto;
 import com.uit.petrescueapi.application.dto.post.PostSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.PostQueryDataPort;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -43,6 +45,25 @@ public class PostQueryAdapter implements PostQueryDataPort {
     @Override
     public Page<PostSummaryResponseDto> findAllSummaries(Pageable pageable) {
         return queryRepo.findAllSummaries(pageable).map(this::toSummaryDto);
+    }
+
+    @Override
+    public PostCursorResponseDto findFeedByCursor(LocalDateTime cursor, int size, UUID viewerId) {
+        Page<PostSummaryResponseDto> page = queryRepo.findFeedByCursor(
+                cursor,
+                viewerId,
+                org.springframework.data.domain.PageRequest.of(0, size)
+        ).map(this::toSummaryDto);
+
+        List<PostSummaryResponseDto> items = page.getContent();
+        LocalDateTime nextCursor = items.isEmpty() ? null : items.get(items.size() - 1).getCreatedAt();
+        boolean hasMore = items.size() == size;
+
+        return PostCursorResponseDto.builder()
+                .items(items)
+                .nextCursor(nextCursor)
+                .hasMore(hasMore)
+                .build();
     }
 
     // ── Detail (single post) query ──────────────
@@ -77,9 +98,12 @@ public class PostQueryAdapter implements PostQueryDataPort {
     private PostSummaryResponseDto toSummaryDto(PostSummaryProjection p) {
         return PostSummaryResponseDto.builder()
                 .postId(p.getPostId())
+                .authorId(p.getAuthorId())
                 .authorUsername(p.getAuthorUsername())
                 .content(p.getContent())
                 .tags(Collections.emptyList())
+                .likeCount(p.getLikeCount())
+                .commentCount(p.getCommentCount())
                 .createdAt(p.getCreatedAt())
                 .build();
     }

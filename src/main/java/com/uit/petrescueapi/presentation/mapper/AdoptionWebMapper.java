@@ -18,6 +18,10 @@ public interface AdoptionWebMapper {
     @Mapping(target = "decidedBy", source = "decidedBy")
     @Mapping(target = "createdAt", source = "createdAt")
     @Mapping(target = "petName", ignore = true)
+    @Mapping(target = "petPrimaryImageUrl", ignore = true)
     @Mapping(target = "applicantUsername", ignore = true)
+    @Mapping(target = "organizationName", ignore = true)
+    @Mapping(target = "decidedByUsername", ignore = true)
+    @Mapping(target = "adoptionCode", source = "adoptionCode")
     AdoptionResponseDto toDto(AdoptionApplication app);
 }

@@ -33,6 +33,9 @@ public class BannerJpaEntity extends BaseJpaEntity {
     @Column(name = "subtitle", columnDefinition = "TEXT")
     private String subtitle;
 
+    @Column(name = "button_text", length = 255)
+    private String buttonText;
+
     @Column(name = "media_id")
     private UUID mediaId;
 
@@ -55,7 +58,7 @@ public class BannerJpaEntity extends BaseJpaEntity {
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private boolean active = true;
+    private Boolean active = true;
 
     @Column(name = "target_page", length = 100)
     @Builder.Default

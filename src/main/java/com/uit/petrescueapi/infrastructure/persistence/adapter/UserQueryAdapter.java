@@ -79,6 +79,7 @@ public class UserQueryAdapter implements UserQueryDataPort {
     private UserSummaryResponseDto toSummaryDto(UserSummaryProjection p) {
         return UserSummaryResponseDto.builder()
                 .userId(p.getUserId())
+                .userCode(p.getUserCode())
                 .username(p.getUsername())
                 .email(p.getEmail())
                 .status(p.getStatus())
@@ -86,15 +87,28 @@ public class UserQueryAdapter implements UserQueryDataPort {
     }
 
     private UserResponseDto toResponseDto(UserDetailProjection p, List<String> roles) {
+        UserReputationResponseDto reputation = userReputationJpaRepo.findById(p.getUserId())
+                .map(this::toReputationDto)
+                .orElse(null);
+
         return UserResponseDto.builder()
                 .userId(p.getUserId())
+                .userCode(p.getUserCode())
                 .organizationId(p.getOrganizationId())
                 .organizationName(p.getOrganizationName())
                 .organizationRole(p.getOrganizationRole())
                 .username(p.getUsername())
                 .email(p.getEmail())
+                .fullName(p.getFullName())
+                .avatarUrl(p.getAvatarUrl())
+                .phone(p.getPhone())
+                .gender(p.getGender())
+                .streetAddress(p.getStreetAddress())
+                .wardName(p.getWardName())
+                .provinceName(p.getProvinceName())
                 .status(p.getStatus())
                 .emailVerified(p.getEmailVerified())
+                .reputation(reputation)
                 .roles(roles)
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())

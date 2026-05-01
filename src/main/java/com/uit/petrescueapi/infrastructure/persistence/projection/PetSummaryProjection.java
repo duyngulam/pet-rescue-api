@@ -13,6 +13,7 @@ public interface PetSummaryProjection {
 
     // ── Pet fields ──────────────────────────────
     UUID getId();
+    String getPetCode();
     String getName();
     String getSpecies();
     String getBreed();

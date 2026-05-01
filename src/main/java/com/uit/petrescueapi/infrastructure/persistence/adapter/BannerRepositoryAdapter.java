@@ -39,6 +39,20 @@ public class BannerRepositoryAdapter implements BannerRepository {
     }
 
     @Override
+    public Page<Banner> findAllFiltered(String targetPage, Boolean active, Pageable pageable) {
+        if (targetPage != null && active != null) {
+            return jpa.findByTargetPageAndActiveAndDeletedFalse(targetPage, active, pageable).map(mapper::toDomain);
+        }
+        if (targetPage != null) {
+            return jpa.findByTargetPageAndDeletedFalse(targetPage, pageable).map(mapper::toDomain);
+        }
+        if (active != null) {
+            return jpa.findByActiveAndDeletedFalse(active, pageable).map(mapper::toDomain);
+        }
+        return jpa.findByDeletedFalse(pageable).map(mapper::toDomain);
+    }
+
+    @Override
     public Page<Banner> findByTargetPage(String targetPage, Pageable pageable) {
         return jpa.findByTargetPageAndDeletedFalse(targetPage, pageable).map(mapper::toDomain);
     }

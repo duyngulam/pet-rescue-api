@@ -4,12 +4,14 @@ import java.util.UUID;
 
 public interface OrganizationSummaryProjection {
      UUID getOrganizationId();
+     String getOrganizationCode();
      String getName();
      String getType(); // SHELTER | VET_CENTER
      String getStatus();
-     String getStreet_address();
-     String getWard_name();
-     String getProvince_name();
+     String getStreetAddress();
+     String getWardName();
+     String getProvinceName();
      String getPhone();
      String getEmail();
+     String getImageUrl();
 }

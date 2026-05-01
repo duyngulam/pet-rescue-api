@@ -6,6 +6,7 @@ package com.uit.petrescueapi.domain.valueobject;
 public enum UserStatus {
     PENDING_VERIFICATION,
     ACTIVE,
+    LOCKED,
     INACTIVE,
     BANNED
 }

@@ -18,6 +18,7 @@ import java.util.UUID;
 public class AdoptionApplication extends BaseEntity {
 
     private UUID applicationId;
+    private String adoptionCode;
     private UUID petId;
     private UUID applicantId;
     private UUID organizationId;

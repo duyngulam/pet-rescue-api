@@ -5,7 +5,7 @@ import com.uit.petrescueapi.domain.valueobject.RescuePriority;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -21,6 +21,9 @@ public class RescueMapMarkerDto {
     
     @Schema(description = "Rescue case ID")
     private UUID caseId;
+
+    @Schema(description = "Visual rescue case code", example = "R-0001")
+    private String caseCode;
     
     @Schema(description = "Latitude coordinate")
     private Double latitude;
@@ -38,5 +41,5 @@ public class RescueMapMarkerDto {
     private String species;
     
     @Schema(description = "When the case was reported")
-    private OffsetDateTime reportedAt;
+    private LocalDateTime reportedAt;
 }

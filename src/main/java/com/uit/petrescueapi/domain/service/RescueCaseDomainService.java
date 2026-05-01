@@ -3,6 +3,7 @@ package com.uit.petrescueapi.domain.service;
 import com.uit.petrescueapi.domain.entity.RescueCase;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.RescueCaseRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.RescueCaseStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import java.util.UUID;
 public class RescueCaseDomainService {
 
     private final RescueCaseRepository rescueCaseRepository;
+    private final VisualCodeRepository visualCodeRepository;
 
     // ── Status-transition matrix ───────────────────
     private static final Map<RescueCaseStatus, Set<RescueCaseStatus>> ALLOWED_TRANSITIONS = Map.of(
@@ -64,6 +66,7 @@ public class RescueCaseDomainService {
     public RescueCase report(RescueCase rescueCase) {
         log.info("Reporting new rescue case");
         rescueCase.setCaseId(UUID.randomUUID());
+        rescueCase.setCaseCode(visualCodeRepository.nextRescueCaseCode());
         rescueCase.setStatus(RescueCaseStatus.REPORTED);
         rescueCase.setReportedAt(LocalDateTime.now());
         rescueCase.setCreatedAt(LocalDateTime.now());

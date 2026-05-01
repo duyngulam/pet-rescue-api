@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 public class Organization extends BaseEntity {
 
 	private java.util.UUID organizationId;
+	private String organizationCode;
 	private String name;
 	private String description;
 	private String type; // SHELTER | VET_CENTER
@@ -23,6 +24,7 @@ public class Organization extends BaseEntity {
 	private String provinceName;
 	private String phone;
 	private String email;
+	private String imageUrl;
 	private String officialLink;
 	private Double latitude;
 	private Double longitude;

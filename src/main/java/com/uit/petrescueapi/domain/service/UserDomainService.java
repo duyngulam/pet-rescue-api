@@ -6,6 +6,7 @@ import com.uit.petrescueapi.domain.exception.ResourceAlreadyExistsException;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.RoleRepository;
 import com.uit.petrescueapi.domain.repository.UserRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class UserDomainService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final VisualCodeRepository visualCodeRepository;
 
     @Transactional(readOnly = true)
     public User findById(UUID id) {
@@ -57,6 +59,7 @@ public class UserDomainService {
 
         User user = User.builder()
                 .id(UUID.randomUUID())
+                .userCode(visualCodeRepository.nextUserCode())
                 .username(username)
                 .email(email)
                 .passwordHash(hashedPassword)
@@ -101,6 +104,7 @@ public class UserDomainService {
 
         User user = User.builder()
                 .id(UUID.randomUUID())
+                .userCode(visualCodeRepository.nextUserCode())
                 .username(username)
                 .email(email)
                 .passwordHash(hashedPassword)
@@ -128,6 +132,18 @@ public class UserDomainService {
         if (username != null) user.setUsername(username);
         if (avatarUrl != null) user.setAvatarUrl(avatarUrl);
         user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    public User lockAccount(UUID id) {
+        User user = findById(id);
+        user.lock();
+        return userRepository.save(user);
+    }
+
+    public User unlockAccount(UUID id) {
+        User user = findById(id);
+        user.activate();
         return userRepository.save(user);
     }
 

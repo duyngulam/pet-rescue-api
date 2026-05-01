@@ -20,6 +20,9 @@ public class UserResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID userId;
 
+    @Schema(example = "U-0001")
+    private String userCode;
+
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID organizationId;
 
@@ -38,6 +41,9 @@ public class UserResponseDto {
     @Schema(example = "John Doe")
     private String fullName;
 
+    @Schema(example = "https://cdn.example.com/avatars/john.jpg")
+    private String avatarUrl;
+
     @Schema(example = "+84912345678")
     private String phone;
 
@@ -53,12 +59,13 @@ public class UserResponseDto {
     @Schema(example = "Ho Chi Minh City")
     private String provinceName;
 
-    @Schema(example = "ACTIVE", allowableValues = {"PENDING_VERIFICATION", "ACTIVE", "INACTIVE", "BANNED"})
+    @Schema(example = "ACTIVE", allowableValues = {"PENDING_VERIFICATION", "ACTIVE", "LOCKED", "INACTIVE", "BANNED"})
     private String status;
 
     @Schema(example = "true")
     private boolean emailVerified;
 
+    private UserReputationResponseDto reputation;
     private List<String> roles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

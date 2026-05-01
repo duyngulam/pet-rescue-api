@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface RescueCaseSummaryProjection {
 
     UUID getCaseId();
+    String getCaseCode();
     String getSpecies();
     String getPriority();
     String getStatus();

@@ -31,6 +31,9 @@ public class PetJpaEntity extends BaseJpaEntity {
     @Column(name = "pet_id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "pet_code", nullable = false, updatable = false)
+    private String petCode;
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 

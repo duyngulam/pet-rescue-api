@@ -20,6 +20,8 @@ public class PostSummaryResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID postId;
 
+    private UUID authorId;
+
     @Schema(example = "johndoe")
     private String authorUsername;
 
@@ -27,6 +29,8 @@ public class PostSummaryResponseDto {
     private String content;
 
     private List<String> tags;
+    private Integer likeCount;
+    private Integer commentCount;
 
     private LocalDateTime createdAt;
 }

@@ -13,12 +13,19 @@ public interface UserDetailProjection {
 
     // ── Summary fields ───────────────────────────
     UUID getUserId();
+    String getUserCode();
     String getUsername();
     String getEmail();
     String getStatus();
 
     // ── Detail fields ────────────────────────────
     String getAvatarUrl();
+    String getFullName();
+    String getPhone();
+    String getGender();
+    String getStreetAddress();
+    String getWardName();
+    String getProvinceName();
     boolean getEmailVerified();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();

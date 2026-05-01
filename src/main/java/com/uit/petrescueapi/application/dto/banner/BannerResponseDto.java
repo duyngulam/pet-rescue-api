@@ -17,6 +17,7 @@ public class BannerResponseDto {
     private UUID bannerId;
     private String title;
     private String subtitle;
+    private String buttonText;
     private UUID mediaId;
     private String mediaUrl;  // Resolved from media_files table
     private String linkUrl;

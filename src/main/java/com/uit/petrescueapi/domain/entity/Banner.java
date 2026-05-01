@@ -19,13 +19,14 @@ public class Banner extends BaseEntity {
     private UUID bannerId;
     private String title;
     private String subtitle;
+    private String buttonText;
     private UUID mediaId;          // Reference to media_files
     private String linkUrl;
     private String linkType;       // INTERNAL, EXTERNAL, NONE
     private Integer displayOrder;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private boolean active;
+    private Boolean active;
     private String targetPage;     // HOME, ADOPTION, RESCUE, etc.
 
     /**
@@ -42,6 +43,6 @@ public class Banner extends BaseEntity {
      * Check if the banner should be displayed (active + within date range + not deleted).
      */
     public boolean shouldDisplay() {
-        return active && !isDeleted() && isWithinDateRange();
+        return Boolean.TRUE.equals(active) && !isDeleted() && isWithinDateRange();
     }
 }

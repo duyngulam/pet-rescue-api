@@ -18,6 +18,7 @@ import java.util.UUID;
 @Schema(description = "Rescue case")
 public class RescueCaseResponseDto {
     private UUID caseId;
+    private String caseCode;
     private UUID petId;
     private String petName;
     private UUID reportedBy;

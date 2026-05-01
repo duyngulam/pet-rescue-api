@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
@@ -82,5 +83,18 @@ public class PostController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
+    }
+
+    @GetMapping("/feed")
+    @Operation(
+            summary = "Post feed by cursor",
+            description = "Returns post feed using cursor pagination by timestamp."
+    )
+    public ResponseEntity<ApiResponse<PostCursorResponseDto>> getFeed(
+            @RequestParam(required = false) LocalDateTime cursor,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
+        UUID viewerId = authentication != null ? UUID.fromString(authentication.getName()) : null;
+        return ResponseEntity.ok(ApiResponse.ok(queryPort.findFeedByCursor(cursor, size, viewerId)));
     }
 }

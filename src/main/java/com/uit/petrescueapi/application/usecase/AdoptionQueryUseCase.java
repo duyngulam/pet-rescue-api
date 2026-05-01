@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -33,8 +34,8 @@ public class AdoptionQueryUseCase implements AdoptionQueryPort {
     }
 
     @Override
-    public Page<AdoptionSummaryResponseDto> findAll(String status, Pageable pageable) {
-        log.debug("Query: find all adoption applications (status={}, paginated)", status);
-        return queryDataPort.findAllSummaries(status, pageable);
+    public Page<AdoptionSummaryResponseDto> findAll(List<String> statuses, Pageable pageable) {
+        log.debug("Query: find all adoption applications (statuses={}, paginated)", statuses);
+        return queryDataPort.findAllSummaries(statuses, pageable);
     }
 }

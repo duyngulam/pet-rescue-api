@@ -97,6 +97,7 @@ public class OrganizationCommandUseCase implements OrganizationCommandPort {
                 .provinceName(cmd.getProvinceName())
                 .phone(cmd.getPhone())
                 .email(cmd.getEmail())
+                .imageUrl(cmd.getImageUrl())
                 .officialLink(cmd.getOfficialLink())
                 .latitude(cmd.getLatitude())
                 .longitude(cmd.getLongitude())

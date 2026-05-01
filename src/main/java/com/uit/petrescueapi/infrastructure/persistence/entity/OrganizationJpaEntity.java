@@ -24,6 +24,9 @@ public class OrganizationJpaEntity extends BaseJpaEntity {
     @Column(name = "organization_id", updatable = false, nullable = false)
     private UUID organizationId;
 
+    @Column(name = "organization_code", nullable = false, updatable = false)
+    private String organizationCode;
+
     @Column(name = "name", length = 255)
     private String name;
 
@@ -53,6 +56,9 @@ public class OrganizationJpaEntity extends BaseJpaEntity {
 
     @Column(name = "email")
     private String email;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
 
     @Column(name = "official_link", columnDefinition = "TEXT")
     private String officialLink;

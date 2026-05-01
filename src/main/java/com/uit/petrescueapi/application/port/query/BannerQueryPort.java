@@ -16,6 +16,8 @@ public interface BannerQueryPort {
 
     Page<BannerResponseDto> findAll(Pageable pageable);
 
+    Page<BannerResponseDto> findAllFiltered(String targetPage, Boolean active, Pageable pageable);
+
     Page<BannerResponseDto> findByTargetPage(String targetPage, Pageable pageable);
 
     /**

@@ -1,6 +1,6 @@
 package com.uit.petrescueapi.infrastructure.persistence.projection;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -11,10 +11,11 @@ import java.util.UUID;
 public interface RescueMapMarkerProjection {
 
     UUID getCaseId();
+    String getCaseCode();
     Double getLatitude();
     Double getLongitude();
     String getPriority();
     String getStatus();
     String getSpecies();
-    OffsetDateTime getReportedAt();
+    LocalDateTime getReportedAt();
 }

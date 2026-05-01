@@ -9,19 +9,22 @@ import java.util.UUID;
  */
 public interface OrganizationDetailProjection {
     UUID getOrganizationId();
+    String getOrganizationCode();
     String getName();
     String getDescription();
     String getType();
-    String getStreet_address();
-    String getWard_name();
-    String getProvince_name();
+    String getStreetAddress();
+    String getWardName();
+    String getProvinceName();
     String getPhone();
     String getEmail();
-    String getOfficial_link();
+    String getImageUrl();
+    String getOfficialLink();
     Double getLatitude();
     Double getLongitude();
     String getStatus();
-    UUID getRequested_by_user_id();
+    UUID getRequestedByUserId();
+    String getRequestedByUsername();
     UUID getCreatedBy();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();

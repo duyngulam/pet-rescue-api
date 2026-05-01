@@ -12,7 +12,9 @@ import java.util.UUID;
 public interface AdoptionSummaryProjection {
 
     UUID getApplicationId();
+    String getAdoptionCode();
     String getPetName();
+    String getPetPrimaryImageUrl();
     String getApplicantUsername();
     String getStatus();
     String getExperience();

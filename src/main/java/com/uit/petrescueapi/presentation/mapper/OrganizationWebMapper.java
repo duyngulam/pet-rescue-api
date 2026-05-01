@@ -24,6 +24,7 @@ public interface OrganizationWebMapper {
      * All fields mapped directly; status (enum) is converted to string.
      */
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "requestedByUsername", ignore = true)
     OrganizationResponseDto toDto(Organization organization);
 
     /**
@@ -40,5 +41,6 @@ public interface OrganizationWebMapper {
      * so it is ignored here and will be null in command responses.
      */
     @Mapping(target = "username", ignore = true)
+    @Mapping(target = "organizationName", ignore = true)
     OrganizationMemberResponseDto toMemberDto(OrganizationMember member);
 }

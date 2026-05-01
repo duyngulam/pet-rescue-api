@@ -19,10 +19,16 @@ public class AdoptionResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID applicationId;
 
+    @Schema(example = "A-0001")
+    private String adoptionCode;
+
     private UUID petId;
 
     @Schema(description = "Pet name (denormalized for list views)", example = "Buddy")
     private String petName;
+
+    @Schema(example = "https://cdn.example.com/pets/buddy-primary.jpg")
+    private String petPrimaryImageUrl;
 
     private UUID applicantId;
 
@@ -30,6 +36,7 @@ public class AdoptionResponseDto {
     private String applicantUsername;
 
     private UUID organizationId;
+    private String organizationName;
 
     @Schema(example = "PENDING", allowableValues = {"PENDING", "APPROVED", "REJECTED", "CANCELLED"})
     private String status;
@@ -43,4 +50,5 @@ public class AdoptionResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime decidedAt;
     private UUID decidedBy;
+    private String decidedByUsername;
 }

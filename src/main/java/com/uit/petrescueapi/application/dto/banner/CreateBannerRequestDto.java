@@ -20,6 +20,8 @@ public class CreateBannerRequestDto {
 
     private String subtitle;
 
+    private String buttonText;
+
     private UUID mediaId;
 
     private String linkUrl;

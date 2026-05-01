@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -40,14 +41,14 @@ public class PetQueryUseCase implements PetQueryPort {
             String species,
             String breed,
             String gender,
-            PetStatus status,
+            List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,
             Pageable pageable
     ) {
-        log.debug("Query: find all pets with filters (species={}, breed={}, gender={}, status={}, ownerUserId={}, ownerOrganizationId={})",
-                species, breed, gender, status, ownerUserId, ownerOrganizationId);
-        return queryDataPort.findAllWithFilters(species, breed, gender, status, ownerUserId, ownerOrganizationId, pageable);
+        log.debug("Query: find all pets with filters (species={}, breed={}, gender={}, statuses={}, ownerUserId={}, ownerOrganizationId={})",
+                species, breed, gender, statuses, ownerUserId, ownerOrganizationId);
+        return queryDataPort.findAllWithFilters(species, breed, gender, statuses, ownerUserId, ownerOrganizationId, pageable);
     }
 
     @Override

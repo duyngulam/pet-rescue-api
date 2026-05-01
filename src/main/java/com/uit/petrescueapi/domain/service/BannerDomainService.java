@@ -46,6 +46,11 @@ public class BannerDomainService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Banner> findAllFiltered(String targetPage, Boolean active, Pageable pageable) {
+        return bannerRepository.findAllFiltered(targetPage, active, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Banner> findByTargetPage(String targetPage, Pageable pageable) {
         return bannerRepository.findByTargetPage(targetPage, pageable);
     }
@@ -76,7 +81,10 @@ public class BannerDomainService {
         if (banner.getTargetPage() == null) {
             banner.setTargetPage("HOME");
         }
-        
+        if (banner.getActive() == null) {
+            banner.setActive(true);
+        }
+
         return bannerRepository.save(banner);
     }
 
@@ -97,7 +105,7 @@ public class BannerDomainService {
     public Banner toggleActive(UUID bannerId) {
         log.info("Toggling active status for banner: {}", bannerId);
         Banner banner = findById(bannerId);
-        banner.setActive(!banner.isActive());
+        banner.setActive(!Boolean.TRUE.equals(banner.getActive()));
         banner.setUpdatedAt(LocalDateTime.now());
         return bannerRepository.save(banner);
     }
@@ -129,13 +137,14 @@ public class BannerDomainService {
     private void applyUpdates(Banner target, Banner source) {
         if (source.getTitle() != null) target.setTitle(source.getTitle());
         if (source.getSubtitle() != null) target.setSubtitle(source.getSubtitle());
+        if (source.getButtonText() != null) target.setButtonText(source.getButtonText());
         if (source.getMediaId() != null) target.setMediaId(source.getMediaId());
         if (source.getLinkUrl() != null) target.setLinkUrl(source.getLinkUrl());
         if (source.getLinkType() != null) target.setLinkType(source.getLinkType());
         if (source.getDisplayOrder() != null) target.setDisplayOrder(source.getDisplayOrder());
         if (source.getStartDate() != null) target.setStartDate(source.getStartDate());
         if (source.getEndDate() != null) target.setEndDate(source.getEndDate());
-        target.setActive(source.isActive());
+        if (source.getActive() != null) target.setActive(source.getActive());
         if (source.getTargetPage() != null) target.setTargetPage(source.getTargetPage());
     }
 }

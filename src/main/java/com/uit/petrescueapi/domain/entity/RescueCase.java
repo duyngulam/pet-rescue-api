@@ -20,6 +20,7 @@ import java.util.UUID;
 public class RescueCase extends BaseEntity {
 
     private UUID caseId;
+    private String caseCode;
     private UUID reportedBy;
     private UUID organizationId;
     private UUID petId;

@@ -17,7 +17,11 @@ public interface BannerJpaRepository extends JpaRepository<BannerJpaEntity, UUID
 
     Page<BannerJpaEntity> findByDeletedFalse(Pageable pageable);
 
+    Page<BannerJpaEntity> findByActiveAndDeletedFalse(boolean active, Pageable pageable);
+
     Page<BannerJpaEntity> findByTargetPageAndDeletedFalse(String targetPage, Pageable pageable);
+
+    Page<BannerJpaEntity> findByTargetPageAndActiveAndDeletedFalse(String targetPage, boolean active, Pageable pageable);
 
     /**
      * Find active banners for a specific target page that are within their display date range.

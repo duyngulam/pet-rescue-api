@@ -60,7 +60,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 entity.isEmailVerified(),      // enabled only if verified
                 true,                          // accountNonExpired
                 true,                          // credentialsNonExpired
-                !"BANNED".equals(entity.getStatus().name()), // accountNonLocked
+                !"BANNED".equals(entity.getStatus().name()) && !"LOCKED".equals(entity.getStatus().name()),
                 authorities
         );
     }

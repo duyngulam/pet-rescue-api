@@ -73,9 +73,11 @@ public class AdminController {
 
         UserResponseDto dto = UserResponseDto.builder()
                 .userId(user.getId())
+                .userCode(user.getUserCode())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .phone(user.getPhone())
                 .gender(user.getGender())
                 .streetAddress(user.getStreetAddress())
@@ -114,11 +116,13 @@ public class AdminController {
 
         UserResponseDto dto = UserResponseDto.builder()
                 .userId(user.getId())
+                .userCode(user.getUserCode())
                 .organizationId(organizationId)
                 .organizationName(null)
                 .organizationRole(cmd.getOrganizationRole())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
                 .status(user.getStatus().name())
                 .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream().map(r -> r.getCode()).toList())
@@ -145,7 +149,9 @@ public class AdminController {
 
         OrganizationMemberResponseDto dto = OrganizationMemberResponseDto.builder()
                 .organizationId(member.getOrganizationId())
+                .organizationName(null)
                 .userId(member.getUserId())
+                .username(targetUser.getUsername())
                 .role(member.getRole())
                 .status(member.getStatus())
                 .joinedAt(member.getJoinedAt())
@@ -163,5 +169,43 @@ public class AdminController {
 
         Pet created = petCommandPort.createForUserInOrganization(cmd, organizationId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(petWebMapper.toDto(created)));
+    }
+
+    @PatchMapping("/users/{userId}/lock")
+    @Operation(summary = "Lock user account")
+    public ResponseEntity<ApiResponse<UserResponseDto>> lockUser(@PathVariable UUID userId) {
+        User user = userDomainService.lockAccount(userId);
+        UserResponseDto dto = UserResponseDto.builder()
+                .userId(user.getId())
+                .userCode(user.getUserCode())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
+                .status(user.getStatus().name())
+                .emailVerified(user.isEmailVerified())
+                .roles(user.getRoles().stream().map(r -> r.getCode()).toList())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+        return ResponseEntity.ok(ApiResponse.ok(dto));
+    }
+
+    @PatchMapping("/users/{userId}/unlock")
+    @Operation(summary = "Unlock user account")
+    public ResponseEntity<ApiResponse<UserResponseDto>> unlockUser(@PathVariable UUID userId) {
+        User user = userDomainService.unlockAccount(userId);
+        UserResponseDto dto = UserResponseDto.builder()
+                .userId(user.getId())
+                .userCode(user.getUserCode())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
+                .status(user.getStatus().name())
+                .emailVerified(user.isEmailVerified())
+                .roles(user.getRoles().stream().map(r -> r.getCode()).toList())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+        return ResponseEntity.ok(ApiResponse.ok(dto));
     }
 }

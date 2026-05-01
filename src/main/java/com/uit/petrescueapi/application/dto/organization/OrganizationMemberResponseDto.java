@@ -19,6 +19,9 @@ public class OrganizationMemberResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID organizationId;
 
+    @Schema(example = "Happy Paws Shelter")
+    private String organizationName;
+
     @Schema(example = "550e8400-e29b-41d4-a716-446655440001")
     private UUID userId;
 

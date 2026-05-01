@@ -24,6 +24,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
 
     @Query(value = """
         SELECT p.pet_id AS id,
+               p.pet_code AS petCode,
                p.name AS name,
                p.species AS species,
                p.breed AS breed,
@@ -59,7 +60,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
           AND (:species IS NULL OR p.species = :species)
           AND (:breed IS NULL OR p.breed = :breed)
           AND (:gender IS NULL OR p.gender = :gender)
-          AND (:status IS NULL OR p.status = :status)
+          AND (:statuses IS NULL OR p.status IN (:statuses))
           AND (:ownerUserId IS NULL OR (pco.owner_type = 'USER' AND pco.owner_id = :ownerUserId))
           AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
     """, countQuery = """
@@ -70,7 +71,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
           AND (:species IS NULL OR p.species = :species)
           AND (:breed IS NULL OR p.breed = :breed)
           AND (:gender IS NULL OR p.gender = :gender)
-          AND (:status IS NULL OR p.status = :status)
+          AND (:statuses IS NULL OR p.status IN (:statuses))
           AND (:ownerUserId IS NULL OR (pco.owner_type = 'USER' AND pco.owner_id = :ownerUserId))
           AND (:ownerOrganizationId IS NULL OR (pco.owner_type = 'ORGANIZATION' AND pco.owner_id = :ownerOrganizationId))
     """, nativeQuery = true)
@@ -78,13 +79,14 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
             @Param("species") String species,
             @Param("breed") String breed,
             @Param("gender") String gender,
-            @Param("status") String status,
+            @Param("statuses") List<String> statuses,
             @Param("ownerUserId") UUID ownerUserId,
             @Param("ownerOrganizationId") UUID ownerOrganizationId,
             Pageable pageable);
 
     @Query(value = """
         SELECT p.pet_id AS id,
+               p.pet_code AS petCode,
                p.name AS name,
                p.species AS species,
                p.breed AS breed,
@@ -145,6 +147,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
 
     @Query(value = """
         SELECT p.pet_id AS id,
+               p.pet_code AS petCode,
                p.name AS name,
                p.species AS species,
                p.breed AS breed,
@@ -160,8 +163,8 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
                p.rescue_date AS rescueDate,
                 p.rescue_location AS rescueLocation,
                 p.shelter_id AS shelterId,
-                p.created_at AS createdAt,
-                p.updated_at AS updatedAt,
+                 (p.created_at AT TIME ZONE 'UTC') AS createdAt,
+                 (p.updated_at AT TIME ZONE 'UTC') AS updatedAt,
                pco.owner_type AS ownerType,
                pco.owner_id AS ownerId,
                COALESCE(NULLIF(u.full_name, ''), u.username, own_org.name) AS ownerName,
@@ -191,6 +194,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
 
     @Query(value = """
         SELECT p.pet_id AS id,
+               p.pet_code AS petCode,
                p.name AS name,
                p.species AS species,
                p.breed AS breed,
@@ -248,6 +252,7 @@ public interface PetQueryJpaRepository extends JpaRepository<PetJpaEntity, UUID>
 
     @Query(value = """
         SELECT p.pet_id AS id,
+               p.pet_code AS petCode,
                p.name AS name,
                p.species AS species,
                p.breed AS breed,

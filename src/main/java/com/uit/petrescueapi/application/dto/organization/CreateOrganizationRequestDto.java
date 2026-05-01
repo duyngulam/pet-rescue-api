@@ -43,6 +43,9 @@ public class CreateOrganizationRequestDto {
     @Schema(example = "contact@shelter.vn")
     private String email;
 
+    @Schema(example = "https://cdn.example.com/organizations/org-cover.jpg")
+    private String imageUrl;
+
     @Schema(example = "https://facebook.com/happypaws")
     private String officialLink;
 

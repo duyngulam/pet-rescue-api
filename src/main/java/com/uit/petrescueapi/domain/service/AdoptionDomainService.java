@@ -3,6 +3,7 @@ package com.uit.petrescueapi.domain.service;
 import com.uit.petrescueapi.domain.entity.AdoptionApplication;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.AdoptionApplicationRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class AdoptionDomainService {
 
     private final AdoptionApplicationRepository applicationRepository;
     private final PetDomainService petDomainService;
+    private final VisualCodeRepository visualCodeRepository;
 
     // ── Queries ─────────────────────────────────────
 
@@ -50,6 +52,7 @@ public class AdoptionDomainService {
     public AdoptionApplication submit(AdoptionApplication application) {
         log.info("Submitting adoption application for pet {}", application.getPetId());
         application.setApplicationId(UUID.randomUUID());
+        application.setAdoptionCode(visualCodeRepository.nextAdoptionCode());
         application.setStatus("PENDING");
         application.setCreatedAt(LocalDateTime.now());
         return applicationRepository.save(application);

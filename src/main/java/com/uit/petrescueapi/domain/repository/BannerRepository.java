@@ -19,6 +19,8 @@ public interface BannerRepository {
 
     Page<Banner> findAll(Pageable pageable);
 
+    Page<Banner> findAllFiltered(String targetPage, Boolean active, Pageable pageable);
+
     Page<Banner> findByTargetPage(String targetPage, Pageable pageable);
 
     List<Banner> findActiveByTargetPage(String targetPage);

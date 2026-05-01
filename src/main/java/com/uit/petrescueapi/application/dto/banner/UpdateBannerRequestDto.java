@@ -18,6 +18,8 @@ public class UpdateBannerRequestDto {
 
     private String subtitle;
 
+    private String buttonText;
+
     private UUID mediaId;
 
     private String linkUrl;

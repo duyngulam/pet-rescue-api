@@ -26,6 +26,7 @@ import java.util.UUID;
 public class Pet extends BaseEntity {
 
     private UUID id;
+    private String petCode;
     private String name;
     private String species;
     private String breed;

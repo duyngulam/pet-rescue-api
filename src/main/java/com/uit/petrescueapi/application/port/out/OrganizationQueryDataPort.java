@@ -7,6 +7,7 @@ import com.uit.petrescueapi.domain.valueobject.OrganizationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
  * Implemented by the infrastructure query adapter.
  */
 public interface OrganizationQueryDataPort {
-    Page<OrganizationSummaryResponseDto> findAllSummary(OrganizationStatus status, Pageable pageable);
+    Page<OrganizationSummaryResponseDto> findAllSummary(List<OrganizationStatus> statuses, Pageable pageable);
     Optional<OrganizationResponseDto> findById(UUID id);
     Page<OrganizationMemberResponseDto> findMembers(UUID organizationId, Pageable pageable);
 }

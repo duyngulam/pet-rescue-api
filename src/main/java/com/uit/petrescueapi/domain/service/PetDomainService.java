@@ -7,6 +7,7 @@ import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.repository.PetCurrentOwnerRepository;
 import com.uit.petrescueapi.domain.repository.PetOwnershipRepository;
 import com.uit.petrescueapi.domain.repository.PetRepository;
+import com.uit.petrescueapi.domain.repository.VisualCodeRepository;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class PetDomainService {
     private final PetRepository petRepository;
     private final PetOwnershipRepository ownershipRepository;
     private final PetCurrentOwnerRepository currentOwnerRepository;
+    private final VisualCodeRepository visualCodeRepository;
 
     // ── Status-transition matrix ───────────────────
     private static final Map<PetStatus, Set<PetStatus>> ALLOWED_TRANSITIONS = Map.of(
@@ -89,6 +91,7 @@ public class PetDomainService {
     public Pet createForUser(Pet pet, UUID userId) {
         log.info("Creating pet '{}' for user {}", pet.getName(), userId);
         pet.setId(UUID.randomUUID());
+        pet.setPetCode(visualCodeRepository.nextPetCode());
         pet.setStatus(PetStatus.UNOWNED);
         pet.setCreatedAt(LocalDateTime.now());
         Pet saved = petRepository.save(pet);
@@ -124,6 +127,7 @@ public class PetDomainService {
     public Pet createForShelter(Pet pet, UUID shelterId) {
         log.info("Creating pet '{}' for shelter {}", pet.getName(), shelterId);
         pet.setId(UUID.randomUUID());
+        pet.setPetCode(visualCodeRepository.nextPetCode());
         pet.setStatus(PetStatus.UNOWNED);
         pet.setCreatedAt(LocalDateTime.now());
         Pet saved = petRepository.save(pet);

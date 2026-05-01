@@ -97,6 +97,9 @@ public class AuthCommandUseCase implements AuthCommandPort {
         if (user.getStatus() == UserStatus.BANNED) {
             throw new BusinessException("Your account has been banned");
         }
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new BusinessException("Your account has been locked");
+        }
 
         if (!user.isEmailVerified()) {
             throw new BusinessException("Please verify your email before logging in");
@@ -231,12 +234,14 @@ public class AuthCommandUseCase implements AuthCommandPort {
     private UserResponseDto toUserResponse(User user, UUID organizationId, String organizationName, String organizationRole) {
         return UserResponseDto.builder()
                 .userId(user.getId())
+                .userCode(user.getUserCode())
                 .organizationId(organizationId)
                 .organizationName(organizationName)
                 .organizationRole(organizationRole)
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .phone(user.getPhone())
                 .gender(user.getGender())
                 .streetAddress(user.getStreetAddress())

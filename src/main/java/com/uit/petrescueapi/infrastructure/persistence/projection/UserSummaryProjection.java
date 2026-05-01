@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface UserSummaryProjection {
 
     UUID getUserId();
+    String getUserCode();
     String getUsername();
     String getEmail();
     String getStatus();

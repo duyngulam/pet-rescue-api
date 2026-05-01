@@ -43,13 +43,14 @@ public class PetQueryAdapter implements PetQueryDataPort {
             String species,
             String breed,
             String gender,
-            PetStatus status,
+            List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,
             Pageable pageable
     ) {
+        List<String> statusNames = statuses != null ? statuses.stream().map(PetStatus::name).toList() : null;
         return queryRepo.findAllWithFilters(
-                species, breed, gender, status != null ? status.name() : null, ownerUserId, ownerOrganizationId, pageable
+                species, breed, gender, statusNames, ownerUserId, ownerOrganizationId, pageable
         ).map(this::toSummaryDto);
     }
 
@@ -126,6 +127,7 @@ public class PetQueryAdapter implements PetQueryDataPort {
         
         return PetSummaryResponseDto.builder()
                 .petId(p.getId())
+                .petCode(p.getPetCode())
                 .name(p.getName())
                 .species(p.getSpecies())
                 .breed(p.getBreed())
@@ -161,6 +163,7 @@ public class PetQueryAdapter implements PetQueryDataPort {
     private PetResponseDto toResponseDto(PetDetailProjection p, List<String> imageUrls) {
         return PetResponseDto.builder()
                 .petId(p.getId())
+                .petCode(p.getPetCode())
                 .name(p.getName())
                 .species(p.getSpecies())
                 .breed(p.getBreed())

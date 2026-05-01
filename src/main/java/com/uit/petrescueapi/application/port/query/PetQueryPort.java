@@ -6,6 +6,7 @@ import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -21,7 +22,7 @@ public interface PetQueryPort {
             String species,
             String breed,
             String gender,
-            PetStatus status,
+            List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,
             Pageable pageable

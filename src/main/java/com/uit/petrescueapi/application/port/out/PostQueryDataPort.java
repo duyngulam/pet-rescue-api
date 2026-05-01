@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.application.port.out;
 
 import com.uit.petrescueapi.application.dto.post.PostResponseDto;
+import com.uit.petrescueapi.application.dto.post.PostCursorResponseDto;
 import com.uit.petrescueapi.application.dto.post.PostSummaryResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,4 +19,6 @@ public interface PostQueryDataPort {
     PostResponseDto findById(UUID postId);
 
     Page<PostSummaryResponseDto> findAllSummaries(Pageable pageable);
+
+    PostCursorResponseDto findFeedByCursor(java.time.LocalDateTime cursor, int size, UUID viewerId);
 }

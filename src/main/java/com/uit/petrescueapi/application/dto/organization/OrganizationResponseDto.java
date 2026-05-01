@@ -20,6 +20,9 @@ public class OrganizationResponseDto {
     @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID organizationId;
 
+    @Schema(example = "O-1001")
+    private String organizationCode;
+
     @Schema(example = "Happy Paws Shelter")
     private String name;
 
@@ -44,6 +47,9 @@ public class OrganizationResponseDto {
     @Schema(example = "contact@shelter.vn")
     private String email;
 
+    @Schema(example = "https://cdn.example.com/organizations/org-cover.jpg")
+    private String imageUrl;
+
     @Schema(example = "https://facebook.com/happypaws")
     private String officialLink;
 
@@ -58,6 +64,7 @@ public class OrganizationResponseDto {
 
     @Schema(description = "User who requested this organization (for pending orgs)")
     private UUID requestedByUserId;
+    private String requestedByUsername;
 
     private UUID createdBy;
     private LocalDateTime createdAt;

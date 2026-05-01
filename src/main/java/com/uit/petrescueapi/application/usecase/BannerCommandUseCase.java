@@ -27,6 +27,7 @@ public class BannerCommandUseCase implements BannerCommandPort {
         Banner banner = Banner.builder()
                 .title(cmd.getTitle())
                 .subtitle(cmd.getSubtitle())
+                .buttonText(cmd.getButtonText())
                 .mediaId(cmd.getMediaId())
                 .linkUrl(cmd.getLinkUrl())
                 .linkType(cmd.getLinkType())
@@ -45,13 +46,14 @@ public class BannerCommandUseCase implements BannerCommandPort {
         Banner updated = Banner.builder()
                 .title(cmd.getTitle())
                 .subtitle(cmd.getSubtitle())
+                .buttonText(cmd.getButtonText())
                 .mediaId(cmd.getMediaId())
                 .linkUrl(cmd.getLinkUrl())
                 .linkType(cmd.getLinkType())
                 .displayOrder(cmd.getDisplayOrder())
                 .startDate(cmd.getStartDate())
                 .endDate(cmd.getEndDate())
-                .active(cmd.getActive() != null && cmd.getActive())
+                .active(cmd.getActive())
                 .targetPage(cmd.getTargetPage())
                 .build();
         return domainService.update(bannerId, updated);

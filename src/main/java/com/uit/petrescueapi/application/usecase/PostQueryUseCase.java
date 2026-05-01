@@ -1,6 +1,7 @@
 package com.uit.petrescueapi.application.usecase;
 
 import com.uit.petrescueapi.application.dto.post.PostResponseDto;
+import com.uit.petrescueapi.application.dto.post.PostCursorResponseDto;
 import com.uit.petrescueapi.application.dto.post.PostSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.PostQueryDataPort;
 import com.uit.petrescueapi.application.port.query.PostQueryPort;
@@ -36,5 +37,11 @@ public class PostQueryUseCase implements PostQueryPort {
     public Page<PostSummaryResponseDto> findAll(Pageable pageable) {
         log.debug("Query: find all posts (paginated)");
         return queryDataPort.findAllSummaries(pageable);
+    }
+
+    @Override
+    public PostCursorResponseDto findFeedByCursor(java.time.LocalDateTime cursor, int size, UUID viewerId) {
+        log.debug("Query: find post feed by cursor {}, size {}", cursor, size);
+        return queryDataPort.findFeedByCursor(cursor, size, viewerId);
     }
 }

@@ -36,6 +36,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
 
     @Query(value = """
         SELECT rc.caseId       AS caseId,
+               rc.caseCode     AS caseCode,
                rc.species      AS species,
                rc.priority     AS priority,
                rc.status       AS status,
@@ -53,6 +54,7 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
 
     @Query("""
         SELECT rc.caseId        AS caseId,
+               rc.caseCode      AS caseCode,
                rc.species       AS species,
                rc.priority      AS priority,
                rc.status        AS status,
@@ -84,10 +86,11 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
 
     @Query(value = """
         SELECT rc.case_id AS caseId,
+               rc.case_code AS caseCode,
                rc.species AS species,
                rc.priority AS priority,
                rc.status AS status,
-               rc.reported_at AS reportedAt,
+               (rc.reported_at AT TIME ZONE 'UTC') AS reportedAt,
                rc.location_text AS locationText,
                u.username AS reporterUsername,
                ST_Distance(rc.location::geography, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography) AS distance
@@ -114,10 +117,11 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
 
     @Query(value = """
         SELECT rc.case_id AS caseId,
+               rc.case_code AS caseCode,
                rc.species AS species,
                rc.priority AS priority,
                rc.status AS status,
-               rc.reported_at AS reportedAt,
+               (rc.reported_at AT TIME ZONE 'UTC') AS reportedAt,
                rc.location_text AS locationText,
                u.username AS reporterUsername
         FROM rescue_cases rc
@@ -151,12 +155,13 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
      */
     @Query(value = """
         SELECT rc.case_id AS caseId,
+               rc.case_code AS caseCode,
                ST_Y(rc.location) AS latitude,
                ST_X(rc.location) AS longitude,
                rc.priority AS priority,
                rc.status AS status,
                rc.species AS species,
-               rc.reported_at AS reportedAt
+               (rc.reported_at AT TIME ZONE 'UTC') AS reportedAt
         FROM rescue_cases rc
         WHERE rc.is_deleted = false
           AND rc.location IS NOT NULL
@@ -176,12 +181,13 @@ public interface RescueCaseQueryJpaRepository extends JpaRepository<RescueCaseJp
      */
     @Query(value = """
         SELECT rc.case_id AS caseId,
+               rc.case_code AS caseCode,
                ST_Y(rc.location) AS latitude,
                ST_X(rc.location) AS longitude,
                rc.priority AS priority,
                rc.status AS status,
                rc.species AS species,
-               rc.reported_at AS reportedAt
+               (rc.reported_at AT TIME ZONE 'UTC') AS reportedAt
         FROM rescue_cases rc
         WHERE rc.is_deleted = false
           AND rc.location IS NOT NULL

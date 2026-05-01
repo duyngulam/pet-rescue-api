@@ -23,6 +23,7 @@ import java.util.UUID;
 public class PetResponseDto {
 
     private UUID petId;
+    private String petCode;
     private String name;
     private String species;
     private String breed;

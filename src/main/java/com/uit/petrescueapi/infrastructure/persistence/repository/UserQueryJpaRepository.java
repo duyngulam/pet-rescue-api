@@ -26,11 +26,11 @@ public interface UserQueryJpaRepository extends JpaRepository<UserJpaEntity, UUI
 
     @Query("""
         SELECT u.userId       AS userId,
+               u.userCode     AS userCode,
                u.username     AS username,
                u.email        AS email,
                u.status       AS status
         FROM UserJpaEntity u
-        WHERE u.status = 'ACTIVE'
     """)
     Page<UserSummaryProjection> findAllSummary(Pageable pageable);
 
@@ -38,8 +38,15 @@ public interface UserQueryJpaRepository extends JpaRepository<UserJpaEntity, UUI
 
     @Query("""
         SELECT u.userId        AS userId,
+               u.userCode      AS userCode,
                u.username      AS username,
                u.email         AS email,
+               u.fullName      AS fullName,
+               u.phone         AS phone,
+               u.gender        AS gender,
+               u.streetAddress AS streetAddress,
+               u.wardName      AS wardName,
+               u.provinceName  AS provinceName,
                u.status        AS status,
                u.avatarUrl     AS avatarUrl,
                u.emailVerified AS emailVerified,

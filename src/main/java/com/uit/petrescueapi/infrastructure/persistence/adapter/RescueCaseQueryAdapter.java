@@ -99,6 +99,7 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
     private RescueCaseSummaryResponseDto toSummaryDto(RescueCaseSummaryProjection p) {
         return RescueCaseSummaryResponseDto.builder()
                 .caseId(p.getCaseId())
+                .caseCode(p.getCaseCode())
                 .species(p.getSpecies())
                 .priority(p.getPriority() != null ? RescuePriority.valueOf(p.getPriority()) : null)
                 .status(p.getStatus())
@@ -111,6 +112,7 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
     private RescueCaseResponseDto toResponseDto(RescueCaseDetailProjection p) {
         return RescueCaseResponseDto.builder()
                 .caseId(p.getCaseId())
+                .caseCode(p.getCaseCode())
                 .petId(p.getPetId())
                 .petName(p.getPetName())
                 .reportedBy(p.getReportedBy())
@@ -136,6 +138,7 @@ public class RescueCaseQueryAdapter implements RescueCaseQueryDataPort {
     private RescueMapMarkerDto toMarkerDto(RescueMapMarkerProjection p) {
         return RescueMapMarkerDto.builder()
                 .caseId(p.getCaseId())
+                .caseCode(p.getCaseCode())
                 .latitude(p.getLatitude())
                 .longitude(p.getLongitude())
                 .priority(p.getPriority() != null ? RescuePriority.valueOf(p.getPriority()) : null)

@@ -36,4 +36,16 @@ public class UserCommandUseCase implements UserCommandPort {
         user.deactivate();
         userRepository.save(user);
     }
+
+    @Override
+    public User lockAccount(UUID userId) {
+        log.debug("Command: lock user {}", userId);
+        return domainService.lockAccount(userId);
+    }
+
+    @Override
+    public User unlockAccount(UUID userId) {
+        log.debug("Command: unlock user {}", userId);
+        return domainService.unlockAccount(userId);
+    }
 }

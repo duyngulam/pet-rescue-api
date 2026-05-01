@@ -5,7 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.locationtech.jts.geom.Point;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -28,6 +28,9 @@ public class RescueCaseJpaEntity extends BaseJpaEntity {
     @Id
     @Column(name = "case_id", updatable = false, nullable = false)
     private UUID caseId;
+
+    @Column(name = "case_code", nullable = false, updatable = false)
+    private String caseCode;
 
     @Column(name = "reported_by")
     private UUID reportedBy;
@@ -75,10 +78,10 @@ public class RescueCaseJpaEntity extends BaseJpaEntity {
     private String status;
 
     @Column(name = "reported_at", columnDefinition = "TIMESTAMPTZ")
-    private OffsetDateTime reportedAt;
+    private LocalDateTime reportedAt;
 
     @Column(name = "resolved_at", columnDefinition = "TIMESTAMPTZ")
-    private OffsetDateTime resolvedAt;
+    private LocalDateTime resolvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_by", insertable = false, updatable = false)

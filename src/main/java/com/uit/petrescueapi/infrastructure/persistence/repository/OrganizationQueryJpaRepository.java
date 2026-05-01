@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,39 +18,44 @@ public interface OrganizationQueryJpaRepository extends JpaRepository<Organizati
 
     @Query("""
             SELECT o.organizationId AS organizationId,
+                   o.organizationCode AS organizationCode,
                    o.name           AS name,
                    o.type           AS type,
                    o.status         AS status,
-                   o.streetAddress  AS street_address,
-                   o.wardName       AS ward_name,
-                   o.provinceName   AS province_name,
+                   o.streetAddress  AS streetAddress,
+                   o.wardName       AS wardName,
+                   o.provinceName   AS provinceName,
                    o.phone          AS phone,
-                   o.email          AS email
-            FROM OrganizationJpaEntity o
-            WHERE (:status IS NULL AND o.status = 'ACTIVE')
-               OR (:status IS NOT NULL AND o.status = :status)
-            """)
-    Page<OrganizationSummaryProjection> findAllSummary(@Param("status") OrganizationStatus status, Pageable pageable);
+                   o.email          AS email,
+                   o.imageUrl       AS imageUrl
+             FROM OrganizationJpaEntity o
+             WHERE o.status IN :statuses
+             """)
+    Page<OrganizationSummaryProjection> findAllSummary(@Param("statuses") List<OrganizationStatus> statuses, Pageable pageable);
 
     @Query(value = """
-            SELECT o.organization_id     AS organizationId,
-                   o.name                AS name,
-                   o.description         AS description,
-                   o.type                AS type,
-                   o.street_address      AS street_address,
-                   o.ward_name           AS ward_name,
-                   o.province_name       AS province_name,
-                   o.phone               AS phone,
-                   o.email               AS email,
-                   o.official_link       AS official_link,
-                   ST_Y(o.location)      AS latitude,
-                   ST_X(o.location)      AS longitude,
-                   o.status              AS status,
-                   o.requested_by_user_id AS requested_by_user_id,
-                   o.created_by          AS createdBy,
-                   o.created_at          AS createdAt,
-                   o.updated_at          AS updatedAt
+            SELECT o.organization_id      AS organizationId,
+                   o.organization_code    AS organizationCode,
+                   o.name                 AS name,
+                   o.description          AS description,
+                   o.type                 AS type,
+                   o.street_address       AS streetAddress,
+                   o.ward_name            AS wardName,
+                   o.province_name        AS provinceName,
+                   o.phone                AS phone,
+                   o.email                AS email,
+                   o.image_url            AS imageUrl,
+                   o.official_link        AS officialLink,
+                   ST_Y(o.location)       AS latitude,
+                   ST_X(o.location)       AS longitude,
+                   o.status               AS status,
+                   o.requested_by_user_id AS requestedByUserId,
+                   req.username           AS requestedByUsername,
+                   o.created_by           AS createdBy,
+                   (o.created_at AT TIME ZONE 'UTC') AS createdAt,
+                   (o.updated_at AT TIME ZONE 'UTC') AS updatedAt
             FROM organizations o
+            LEFT JOIN users req ON req.user_id = o.requested_by_user_id
             WHERE o.organization_id = :id
             """, nativeQuery = true)
     Optional<OrganizationDetailProjection> findDetailById(@Param("id") UUID id);

@@ -126,6 +126,7 @@ public class PetController {
             @RequestParam(required = false) String species,
             @RequestParam(required = false) String breed,
             @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String searchName,
             @RequestParam(required = false) java.util.List<String> status,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) UUID organizationId) {
@@ -133,7 +134,7 @@ public class PetController {
                 status.stream().map(PetStatus::valueOf).toList();
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(petQueryPort.findAllWithFilters(
-                        species, breed, gender, statusList, userId, organizationId, PageRequest.of(page, size)
+                        species, breed, gender, searchName, statusList, userId, organizationId, PageRequest.of(page, size)
                 ))));
     }
 

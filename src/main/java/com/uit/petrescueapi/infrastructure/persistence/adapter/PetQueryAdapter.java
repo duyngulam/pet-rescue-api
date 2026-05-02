@@ -6,6 +6,7 @@ import com.uit.petrescueapi.application.dto.pet.PetResponseDto;
 import com.uit.petrescueapi.application.dto.pet.PetSummaryResponseDto;
 import com.uit.petrescueapi.application.port.out.CloudStoragePort;
 import com.uit.petrescueapi.application.port.out.PetQueryDataPort;
+import com.uit.petrescueapi.application.port.out.PetSearchPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.domain.valueobject.PetStatus;
 import com.uit.petrescueapi.infrastructure.persistence.projection.PetDetailProjection;
@@ -28,14 +29,15 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class PetQueryAdapter implements PetQueryDataPort {
 
-    private final PetQueryJpaRepository queryRepo;
-    private final CloudStoragePort cloudStoragePort;
+        private final PetQueryJpaRepository queryRepo;
+        private final CloudStoragePort cloudStoragePort;
+        private final PetSearchPort petSearchPort;
 
     // ── List (summary) queries with filters ──────────────────
 
     @Override
     public Page<PetSummaryResponseDto> findAllSummaries(Pageable pageable) {
-        return findAllWithFilters(null, null, null, null, null, null, pageable);
+                return findAllWithFilters(null, null, null, null, null, null, null, pageable);
     }
 
     @Override
@@ -43,15 +45,26 @@ public class PetQueryAdapter implements PetQueryDataPort {
             String species,
             String breed,
             String gender,
+            String searchName,
             List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,
             Pageable pageable
     ) {
         List<String> statusNames = statuses != null ? statuses.stream().map(PetStatus::name).toList() : null;
-        return queryRepo.findAllWithFilters(
-                species, breed, gender, statusNames, ownerUserId, ownerOrganizationId, pageable
-        ).map(this::toSummaryDto);
+        if (searchName != null && !searchName.isBlank()) {
+                        return petSearchPort.searchPets(searchName, species, breed, gender, statusNames, ownerUserId, ownerOrganizationId, pageable);
+        }
+
+                if (statusNames == null || statusNames.isEmpty()) {
+                        return queryRepo.findAllWithFilters(
+                                        species, breed, gender, null, ownerUserId, ownerOrganizationId, pageable
+                        ).map(this::toSummaryDto);
+                }
+
+                return queryRepo.findAllWithFiltersAndStatuses(
+                                species, breed, gender, null, statusNames, ownerUserId, ownerOrganizationId, pageable
+                ).map(this::toSummaryDto);
     }
 
     @Override

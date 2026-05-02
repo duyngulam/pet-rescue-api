@@ -18,7 +18,7 @@ public interface UserQueryDataPort {
 
     UserResponseDto findById(UUID userId);
 
-    Page<UserSummaryResponseDto> findAllSummaries(Pageable pageable);
+    Page<UserSummaryResponseDto> findAllSummaries(String searchName, Pageable pageable);
 
     UserReputationResponseDto getReputation(UUID userId);
 }

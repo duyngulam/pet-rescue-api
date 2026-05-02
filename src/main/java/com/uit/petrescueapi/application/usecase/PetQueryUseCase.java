@@ -33,7 +33,7 @@ public class PetQueryUseCase implements PetQueryPort {
     @Override
     public Page<PetSummaryResponseDto> findAll(Pageable pageable) {
         log.debug("Query: find all pets (paginated)");
-        return queryDataPort.findAllWithFilters(null, null, null, null, null, null, pageable);
+        return queryDataPort.findAllWithFilters(null, null, null, null, null, null, null, pageable);
     }
 
     @Override
@@ -41,14 +41,15 @@ public class PetQueryUseCase implements PetQueryPort {
             String species,
             String breed,
             String gender,
+            String searchName,
             List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,
             Pageable pageable
     ) {
-        log.debug("Query: find all pets with filters (species={}, breed={}, gender={}, statuses={}, ownerUserId={}, ownerOrganizationId={})",
-                species, breed, gender, statuses, ownerUserId, ownerOrganizationId);
-        return queryDataPort.findAllWithFilters(species, breed, gender, statuses, ownerUserId, ownerOrganizationId, pageable);
+        log.debug("Query: find all pets with filters (species={}, breed={}, gender={}, searchName={}, statuses={}, ownerUserId={}, ownerOrganizationId={})",
+                species, breed, gender, searchName, statuses, ownerUserId, ownerOrganizationId);
+        return queryDataPort.findAllWithFilters(species, breed, gender, searchName, statuses, ownerUserId, ownerOrganizationId, pageable);
     }
 
     @Override

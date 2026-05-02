@@ -34,9 +34,9 @@ public class UserQueryUseCase implements UserQueryPort {
     }
 
     @Override
-    public Page<UserSummaryResponseDto> findAll(Pageable pageable) {
-        log.debug("Query: find all users (paginated)");
-        return queryDataPort.findAllSummaries(pageable);
+    public Page<UserSummaryResponseDto> findAll(String searchName, Pageable pageable) {
+        log.debug("Query: find all users (paginated, searchName={})", searchName);
+        return queryDataPort.findAllSummaries(searchName, pageable);
     }
 
     @Override

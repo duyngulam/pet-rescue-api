@@ -22,6 +22,7 @@ public interface PetQueryDataPort {
             String species,
             String breed,
             String gender,
+            String searchName,
             List<PetStatus> statuses,
             UUID ownerUserId,
             UUID ownerOrganizationId,

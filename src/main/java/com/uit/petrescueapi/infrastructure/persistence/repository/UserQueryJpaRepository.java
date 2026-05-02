@@ -34,6 +34,22 @@ public interface UserQueryJpaRepository extends JpaRepository<UserJpaEntity, UUI
     """)
     Page<UserSummaryProjection> findAllSummary(Pageable pageable);
 
+        @Query("""
+         SELECT u.userId       AS userId,
+             u.userCode     AS userCode,
+             u.username     AS username,
+             u.email        AS email,
+             u.status       AS status
+         FROM UserJpaEntity u
+         WHERE (:searchName IS NULL OR :searchName = '' OR
+             LOWER(u.username) LIKE LOWER(CONCAT('%', :searchName, '%')) OR
+             LOWER(u.email) LIKE LOWER(CONCAT('%', :searchName, '%')) OR
+             LOWER(u.fullName) LIKE LOWER(CONCAT('%', :searchName, '%')) OR
+             LOWER(u.phone) LIKE LOWER(CONCAT('%', :searchName, '%')) OR
+             LOWER(u.userCode) LIKE LOWER(CONCAT('%', :searchName, '%')))
+        """)
+        Page<UserSummaryProjection> findAllSummaryWithSearch(@Param("searchName") String searchName, Pageable pageable);
+
     // ── Detail (single user) ────────────────────
 
     @Query("""

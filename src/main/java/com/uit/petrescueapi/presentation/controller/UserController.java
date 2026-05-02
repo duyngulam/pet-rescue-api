@@ -56,9 +56,10 @@ public class UserController {
     @Operation(summary = "List all users")
     public ResponseEntity<ApiResponse<PageResponse<UserSummaryResponseDto>>> getAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String searchName) {
         return ResponseEntity.ok(ApiResponse.ok(
-                PageResponse.from(queryPort.findAll(PageRequest.of(page, size)))));
+                PageResponse.from(queryPort.findAll(searchName, PageRequest.of(page, size)))));
     }
 
     @GetMapping("/{id}/reputation")

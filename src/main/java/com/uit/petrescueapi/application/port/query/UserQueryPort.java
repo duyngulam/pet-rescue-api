@@ -10,6 +10,6 @@ import java.util.UUID;
 
 public interface UserQueryPort {
     UserResponseDto findById(UUID userId);
-    Page<UserSummaryResponseDto> findAll(Pageable pageable);
+    Page<UserSummaryResponseDto> findAll(String searchName, Pageable pageable);
     UserReputationResponseDto getReputation(UUID userId);
 }

@@ -3,6 +3,7 @@ package com.uit.petrescueapi.infrastructure.persistence.adapter;
 import com.uit.petrescueapi.application.dto.user.UserReputationResponseDto;
 import com.uit.petrescueapi.application.dto.user.UserResponseDto;
 import com.uit.petrescueapi.application.dto.user.UserSummaryResponseDto;
+import com.uit.petrescueapi.application.port.out.UserSearchPort;
 import com.uit.petrescueapi.application.port.out.UserQueryDataPort;
 import com.uit.petrescueapi.domain.exception.ResourceNotFoundException;
 import com.uit.petrescueapi.infrastructure.persistence.entity.RoleJpaEntity;
@@ -39,11 +40,16 @@ public class UserQueryAdapter implements UserQueryDataPort {
     private final UserQueryJpaRepository queryRepo;
     private final UserJpaRepository userJpaRepo;
     private final UserReputationJpaRepository userReputationJpaRepo;
+        private final UserSearchPort userSearchPort;
 
     // ── List (summary) queries ──────────────────
 
     @Override
-    public Page<UserSummaryResponseDto> findAllSummaries(Pageable pageable) {
+        public Page<UserSummaryResponseDto> findAllSummaries(String searchName, Pageable pageable) {
+                if (searchName != null && !searchName.isBlank()) {
+                        return userSearchPort.searchUsers(searchName, pageable);
+                }
+
         return queryRepo.findAllSummary(pageable).map(this::toSummaryDto);
     }
 

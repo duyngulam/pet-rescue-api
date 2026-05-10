@@ -80,4 +80,29 @@ public interface AdoptionQueryJpaRepository extends JpaRepository<AdoptionApplic
         WHERE a.deleted = false AND a.applicationId = :id
     """)
     Optional<AdoptionDetailProjection> findDetailById(@Param("id") UUID id);
+
+    @Query("""
+        SELECT a.applicationId   AS applicationId,
+               a.adoptionCode    AS adoptionCode,
+               p.name            AS petName,
+               (SELECT MIN(mf.publicId)
+                FROM PetMediaJpaEntity pm
+                JOIN MediaFileJpaEntity mf ON pm.mediaFileId = mf.mediaId
+                WHERE pm.petId = p.id) AS petPrimaryImageUrl,
+               u.username        AS applicantUsername,
+               a.status          AS status,
+               a.experience      AS experience,
+               a.liveCondition   AS liveCondition,
+               a.createdAt       AS createdAt
+         FROM AdoptionApplicationJpaEntity a
+         LEFT JOIN PetJpaEntity p ON a.petId = p.id
+         LEFT JOIN UserJpaEntity u ON a.applicantId = u.userId
+         WHERE a.deleted = false
+          AND a.applicantId = :applicantId
+          AND a.status IN :statuses
+     """)
+    Page<AdoptionSummaryProjection> findByApplicantIdSummaries(
+            @Param("applicantId") UUID applicantId,
+            @Param("statuses") List<String> statuses,
+            Pageable pageable);
 }

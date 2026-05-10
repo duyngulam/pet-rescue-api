@@ -91,4 +91,15 @@ public class AdoptionController {
         return ResponseEntity.ok(ApiResponse.ok(
                 PageResponse.from(queryPort.findAll(status, PageRequest.of(page, size)))));
     }
+
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get adoption applications by user ID (applicant)")
+    public ResponseEntity<ApiResponse<PageResponse<AdoptionSummaryResponseDto>>> getByUserId(
+            @PathVariable UUID userId,
+            @RequestParam(required = false) List<String> status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(queryPort.findByApplicantId(userId, status, PageRequest.of(page, size)))));
+    }
 }

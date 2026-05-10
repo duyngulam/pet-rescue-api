@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface AdoptionQueryPort {
     AdoptionResponseDto findById(UUID applicationId);
     Page<AdoptionSummaryResponseDto> findAll(List<String> statuses, Pageable pageable);
+    Page<AdoptionSummaryResponseDto> findByApplicantId(UUID applicantId, List<String> statuses, Pageable pageable);
 }
